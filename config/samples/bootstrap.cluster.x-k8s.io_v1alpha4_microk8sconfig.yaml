@@ -1,4 +1,4 @@
-apiVersion: bootstrap.cluster.x-k8s.io.bootstrap.cluster.x-k8s.io/v1alpha4
+apiVersion: bootstrap.cluster.x-k8s.io.bootstrap.cluster.x-k8s.io/v1beta1
 kind: MicroK8sConfig
 metadata:
   name: microk8sconfig-sample

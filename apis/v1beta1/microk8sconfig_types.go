@@ -102,6 +102,8 @@ type InitConfiguration struct {
 
 type JoinConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
+
+	ConnectionToken string `json:"connectionToken"`
 }
 
 // MicroK8sConfigSpec defines the desired state of MicroK8sConfig

@@ -4,74 +4,79 @@ metadata:
   name: capi-quickstart
   namespace: default
 spec:
-  clusterNetwork:
-    pods:
-      cidrBlocks:
-      - 192.168.0.0/16
-    serviceDomain: cluster.local
-    services:
-      cidrBlocks:
-      - 10.128.0.0/12
+#  clusterNetwork:
+#    apiServerPort: 6443
   controlPlaneRef:
-    apiVersion: controlplane.bootstrap.x-k8s.io/v1beta1
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     kind: MicroK8sControlPlane
     name: capi-quickstart-control-plane
-    namespace: default
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-    kind: DockerCluster
+    kind: AWSCluster
     name: capi-quickstart
-    namespace: default
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: DockerCluster
+kind: AWSCluster
 metadata:
   name: capi-quickstart
   namespace: default
+spec:
+  region: us-east-1
+  sshKeyName: ad-hoc
 ---
-apiVersion: controlplane.bootstrap.cluster.x-k8s.io/v1beta1
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: MicroK8sControlPlane
 metadata:
   name: capi-quickstart-control-plane
   namespace: default
 spec:
+  controlPlaneConfig:
+    controlplane:
+      joinConfiguration:
+        connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:
+        bootstrapTokens:
+        - token: "ALSOMYTOKEN"
+        
+ 
+  #  clusterConfiguration:
+  #    apiServer:
+  #      extraArgs:
+  #        cloud-provider: aws
+  #    controllerManager:
+  #      extraArgs:
+  #        cloud-provider: aws
+  #  initConfiguration:
+  #     bootstrapTokens:
+  #     - token: "MYTOKEN"
+  #    nodeRegistration:
+  #      kubeletExtraArgs:
+  #        cloud-provider: aws
+  #      name: '{{ ds.meta_data.local_hostname }}'
+  #  joinConfiguration:
+  #    nodeRegistration:
+  #      kubeletExtraArgs:
+  #        cloud-provider: aws
+  #      name: '{{ ds.meta_data.local_hostname }}'
   machineTemplate:
-    infrastructureRef:
+    infrastructureTemplate:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-      kind: DockerMachineTemplate
+      kind: AWSMachineTemplate
       name: capi-quickstart-control-plane
-      namespace: default
-  replicas: 3
+  replicas: 1
+  version: v1.23.0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: DockerMachineTemplate
+kind: AWSMachineTemplate
 metadata:
   name: capi-quickstart-control-plane
   namespace: default
 spec:
   template:
     spec:
-      extraMounts:
-      - containerPath: /var/run/docker.sock
-        hostPath: /var/run/docker.sock
----
-apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-kind: DockerMachineTemplate
-metadata:
-  name: capi-quickstart-md-0
-  namespace: default
-spec:
-  template:
-    spec: {}
----
-apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
-kind: MicroK8sConfigTemplate
-metadata:
-  name: capi-quickstart-md-0
-  namespace: default
-spec:
-  template:
-    spec: {}
+      iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
+      instanceType: t3.large
+      sshKeyName: ad-hoc
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -80,7 +85,7 @@ metadata:
   namespace: default
 spec:
   clusterName: capi-quickstart
-  replicas: 3
+  replicas: 0
   selector:
     matchLabels: null
   template:
@@ -90,11 +95,39 @@ spec:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: MicroK8sConfigTemplate
           name: capi-quickstart-md-0
-          namespace: default
       clusterName: capi-quickstart
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
-        kind: DockerMachineTemplate
+        kind: AWSMachineTemplate
         name: capi-quickstart-md-0
-        namespace: default
-      version: v1.23.3
+      version: v1.23.0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AWSMachineTemplate
+metadata:
+  name: capi-quickstart-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
+      instanceType: t3.large
+      sshKeyName: ad-hoc
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: MicroK8sConfigTemplate
+metadata:
+  name: capi-quickstart-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:
+        bootstrapTokens:
+        - token: "MYTOKEN"
+        #nodeRegistration:
+        #  kubeletExtraArgs:
+        #    cloud-provider: aws
+        #  name: '{{ ds.meta_data.local_hostname }}'

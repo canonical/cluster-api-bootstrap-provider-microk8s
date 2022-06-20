@@ -15,162 +15,6 @@ spec:
     singular: microk8sconfigtemplate
   scope: Namespaced
   versions:
-  - name: v1alpha4
-    schema:
-      openAPIV3Schema:
-        description: MicroK8sConfigTemplate is the Schema for the microk8sconfigtemplates
-          API
-        properties:
-          apiVersion:
-            description: 'APIVersion defines the versioned schema of this representation
-              of an object. Servers should convert recognized schemas to the latest
-              internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-            type: string
-          kind:
-            description: 'Kind is a string value representing the REST resource this
-              object represents. Servers may infer this from the endpoint the client
-              submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-            type: string
-          metadata:
-            type: object
-          spec:
-            description: MicroK8sConfigTemplateSpec defines the desired state of MicroK8sConfigTemplate
-            properties:
-              template:
-                description: 'EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-                  NOTE: json tags are required.  Any new fields you add must have
-                  json tags for the fields to be serialized.'
-                properties:
-                  spec:
-                    description: MicroK8sConfigSpec defines the desired state of MicroK8sConfig
-                    properties:
-                      clusterConfiguration:
-                        description: 'INSERT ADDITIONAL SPEC FIELDS - desired state
-                          of cluster Important: Run "make" to regenerate code after
-                          modifying this file InitConfiguration along with ClusterConfiguration
-                          are the configurations necessary for the init command'
-                        properties:
-                          apiVersion:
-                            description: 'APIVersion defines the versioned schema
-                              of this representation of an object. Servers should
-                              convert recognized schemas to the latest internal value,
-                              and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-                            type: string
-                          kind:
-                            description: 'Kind is a string value representing the
-                              REST resource this object represents. Servers may infer
-                              this from the endpoint the client submits requests to.
-                              Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                            type: string
-                        type: object
-                      initConfiguration:
-                        properties:
-                          apiVersion:
-                            description: 'APIVersion defines the versioned schema
-                              of this representation of an object. Servers should
-                              convert recognized schemas to the latest internal value,
-                              and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-                            type: string
-                          bootstrapTokens:
-                            description: BootstrapTokens is respected at `kubeadm
-                              init` time and describes a set of Bootstrap Tokens to
-                              create. This information IS NOT uploaded to the kubeadm
-                              cluster configmap, partly because of its sensitive nature
-                            items:
-                              properties:
-                                description:
-                                  description: Description sets a human-friendly message
-                                    why this token exists and what it's used for,
-                                    so other administrators can know its purpose.
-                                  type: string
-                                expires:
-                                  description: Expires specifies the timestamp when
-                                    this token expires. Defaults to being set dynamically
-                                    at runtime based on the TTL. Expires and TTL are
-                                    mutually exclusive.
-                                  format: date-time
-                                  type: string
-                                groups:
-                                  description: Groups specifies the extra groups that
-                                    this token will authenticate as when/if used for
-                                    authentication
-                                  items:
-                                    type: string
-                                  type: array
-                                token:
-                                  description: Token is used for establishing bidirectional
-                                    trust between nodes and control-planes. Used for
-                                    joining nodes in the cluster.
-                                  type: string
-                                ttl:
-                                  description: TTL defines the time to live for this
-                                    token. Defaults to 24h. Expires and TTL are mutually
-                                    exclusive.
-                                  type: string
-                                usages:
-                                  description: Usages describes the ways in which
-                                    this token can be used. Can by default be used
-                                    for establishing bidirectional trust, but that
-                                    can be changed here.
-                                  items:
-                                    type: string
-                                  type: array
-                              required:
-                              - token
-                              type: object
-                            type: array
-                          kind:
-                            description: 'Kind is a string value representing the
-                              REST resource this object represents. Servers may infer
-                              this from the endpoint the client submits requests to.
-                              Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                            type: string
-                          localAPIEndpoint:
-                            properties:
-                              host:
-                                description: The hostname on which the API server
-                                  is serving.
-                                type: string
-                              port:
-                                description: The port on which the API server is serving.
-                                format: int32
-                                type: integer
-                            required:
-                            - host
-                            - port
-                            type: object
-                        type: object
-                      joinConfiguration:
-                        description: Foo is an example field of MicroK8sConfig. Edit
-                          microk8sconfig_types.go to remove/update
-                        properties:
-                          apiVersion:
-                            description: 'APIVersion defines the versioned schema
-                              of this representation of an object. Servers should
-                              convert recognized schemas to the latest internal value,
-                              and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
-                            type: string
-                          kind:
-                            description: 'Kind is a string value representing the
-                              REST resource this object represents. Servers may infer
-                              this from the endpoint the client submits requests to.
-                              Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
-                            type: string
-                        type: object
-                    type: object
-                type: object
-            required:
-            - template
-            type: object
-          status:
-            description: MicroK8sConfigTemplateStatus defines the observed state of
-              MicroK8sConfigTemplate
-            type: object
-        type: object
-    served: true
-    storage: false
-    subresources:
-      status: {}
   - name: v1beta1
     schema:
       openAPIV3Schema:
@@ -306,12 +150,16 @@ spec:
                               convert recognized schemas to the latest internal value,
                               and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                             type: string
+                          connectionToken:
+                            type: string
                           kind:
                             description: 'Kind is a string value representing the
                               REST resource this object represents. Servers may infer
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                        required:
+                        - connectionToken
                         type: object
                     type: object
                 type: object

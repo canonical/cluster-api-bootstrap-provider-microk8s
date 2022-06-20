@@ -35,7 +35,6 @@ import (
 	"k8s.io/component-base/logs"
 	"k8s.io/klog/v2/klogr"
 
-	bootstrapclusterxk8siov1alpha4 "cluster-api-bootstrap-provider-microk8s/apis/v1alpha4"
 	"cluster-api-bootstrap-provider-microk8s/controllers"
 
 	"k8s.io/apimachinery/pkg/runtime"
@@ -70,7 +69,6 @@ func init() {
 	_ = expv1.AddToScheme(scheme)
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
-	utilruntime.Must(bootstrapclusterxk8siov1alpha4.AddToScheme(scheme))
 	utilruntime.Must(bootstrapclusterxk8siov1beta1.AddToScheme(scheme))
 	utilruntime.Must(controlplanev1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme

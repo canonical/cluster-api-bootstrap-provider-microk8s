@@ -21,10 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	"cluster-api-bootstrap-provider-microk8s/apis/v1alpha4"
-	bootstrapclusterxk8siov1alpha4 "cluster-api-bootstrap-provider-microk8s/apis/v1alpha4"
 	bootstrapclusterxk8siov1beta1 "cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
 	cloudinit "cluster-api-bootstrap-provider-microk8s/controllers/cloudinit"
+
+	"cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
+
+	"cluster-api-bootstrap-provider-microk8s/controllers/locking"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"
@@ -170,7 +172,7 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// Wait for the infrastructure to be ready.
 	case !cluster.Status.InfrastructureReady:
 		log.Info("Cluster infrastructure is not ready, waiting")
-		conditions.MarkFalse(config, bootstrapclusterxk8siov1beta1.DataSecretAvailableCondition, v1alpha4.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
+		conditions.MarkFalse(config, bootstrapclusterxk8siov1beta1.DataSecretAvailableCondition, v1beta1.WaitingForClusterInfrastructureReason, clusterv1.ConditionSeverityInfo, "")
 		return ctrl.Result{}, nil
 	// Reconcile status for machines that already have a secret reference, but our status isn't up to date.
 	// This case solves the pivoting scenario (or a backup restore) which doesn't preserve the status subresource on objects.
@@ -345,6 +347,7 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 			//	DiskSetup:           scope.Config.Spec.DiskSetup,
 			//	KubeadmVerbosity:    verbosityFlag,
 		},
+		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
 		//	InitConfiguration:    initdata,
 		//	ClusterConfiguration: clusterdata,
 		//	Certificates:         certificates,
@@ -420,8 +423,12 @@ func (r *MicroK8sConfigReconciler) storeBootstrapData(ctx context.Context, scope
 // SetupWithManager sets up the controller with the Manager.
 func (r *MicroK8sConfigReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
 
+	if r.MicroK8sInitLock == nil {
+		r.MicroK8sInitLock = locking.NewControlPlaneInitMutex(ctrl.LoggerFrom(ctx).WithName("init-locker"), mgr.GetClient())
+	}
+
 	b := ctrl.NewControllerManagedBy(mgr).
-		For(&bootstrapclusterxk8siov1alpha4.MicroK8sConfig{}).
+		For(&bootstrapclusterxk8siov1beta1.MicroK8sConfig{}).
 		Watches(&source.Kind{Type: &clusterv1.Machine{}},
 			handler.EnqueueRequestsFromMapFunc(r.MachineToBootstrapMapFunc)).
 		WithEventFilter(predicates.ResourceNotPausedAndHasFilterLabel(ctrl.LoggerFrom(ctx),
@@ -475,7 +482,7 @@ func (r *MicroK8sConfigReconciler) ClusterToMicroK8sConfigs(o client.Object) []c
 
 	for _, m := range machineList.Items {
 		if m.Spec.Bootstrap.ConfigRef != nil &&
-			m.Spec.Bootstrap.ConfigRef.GroupVersionKind().GroupKind() == v1alpha4.GroupVersion.WithKind("MicroK8sConfig").GroupKind() {
+			m.Spec.Bootstrap.ConfigRef.GroupVersionKind().GroupKind() == v1beta1.GroupVersion.WithKind("MicroK8sConfig").GroupKind() {
 			name := client.ObjectKey{Namespace: m.Namespace, Name: m.Spec.Bootstrap.ConfigRef.Name}
 			result = append(result, ctrl.Request{NamespacedName: name})
 		}
@@ -489,7 +496,7 @@ func (r *MicroK8sConfigReconciler) ClusterToMicroK8sConfigs(o client.Object) []c
 
 		for _, mp := range machinePoolList.Items {
 			if mp.Spec.Template.Spec.Bootstrap.ConfigRef != nil &&
-				mp.Spec.Template.Spec.Bootstrap.ConfigRef.GroupVersionKind().GroupKind() == v1alpha4.GroupVersion.WithKind("MicroK8sConfig").GroupKind() {
+				mp.Spec.Template.Spec.Bootstrap.ConfigRef.GroupVersionKind().GroupKind() == v1beta1.GroupVersion.WithKind("MicroK8sConfig").GroupKind() {
 				name := client.ObjectKey{Namespace: mp.Namespace, Name: mp.Spec.Template.Spec.Bootstrap.ConfigRef.Name}
 				result = append(result, ctrl.Request{NamespacedName: name})
 			}
@@ -506,7 +513,7 @@ func (r *MicroK8sConfigReconciler) MachineToBootstrapMapFunc(o client.Object) []
 	}
 
 	result := []ctrl.Request{}
-	if m.Spec.Bootstrap.ConfigRef != nil && m.Spec.Bootstrap.ConfigRef.GroupVersionKind() == v1alpha4.GroupVersion.WithKind("MicroK8sConfig") {
+	if m.Spec.Bootstrap.ConfigRef != nil && m.Spec.Bootstrap.ConfigRef.GroupVersionKind() == v1beta1.GroupVersion.WithKind("MicroK8sConfig") {
 		name := client.ObjectKey{Namespace: m.Namespace, Name: m.Spec.Bootstrap.ConfigRef.Name}
 		result = append(result, ctrl.Request{NamespacedName: name})
 	}

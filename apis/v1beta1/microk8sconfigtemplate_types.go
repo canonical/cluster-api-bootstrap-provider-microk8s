@@ -17,8 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	v1alpha4 "cluster-api-bootstrap-provider-microk8s/apis/v1alpha4"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
@@ -28,7 +26,7 @@ import (
 // EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
 // NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 type MicroK8sConfigTemplateResource struct {
-	Spec v1alpha4.MicroK8sConfigSpec `json:"spec,omitempty"`
+	Spec MicroK8sConfigSpec `json:"spec,omitempty"`
 }
 
 // MicroK8sConfigTemplateSpec defines the desired state of MicroK8sConfigTemplate

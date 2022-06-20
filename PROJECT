@@ -8,23 +8,6 @@ resources:
 - api:
     crdVersion: v1
     namespaced: true
-  controller: true
-  domain: bootstrap.cluster.x-k8s.io
-  group: bootstrap.cluster.x-k8s.io
-  kind: MicroK8sConfig
-  path: cluster-api-bootstrap-provider-microk8s/api/v1alpha4
-  version: v1alpha4
-- api:
-    crdVersion: v1
-    namespaced: true
-  domain: bootstrap.cluster.x-k8s.io
-  group: bootstrap.cluster.x-k8s.io
-  kind: MicroK8sConfigTemplate
-  path: cluster-api-bootstrap-provider-microk8s/api/v1alpha4
-  version: v1alpha4
-- api:
-    crdVersion: v1
-    namespaced: true
   domain: bootstrap.cluster.x-k8s.io
   group: cluster.x-k8s.io
   kind: MicroK8sConfigTemplate

@@ -3,8 +3,6 @@
 
 ## cluster-api-bootstrap-provider-microk8s
 
-This project currently combines both the bootstrap and controlplane controllers into a single process.
-
 <img src="images/microk8s.png" width="400px" />
 
 ![arch](images/arch.png)
@@ -15,7 +13,7 @@ This project currently combines both the bootstrap and controlplane controllers 
 
 ```
 kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
+apiVersion: kind.x-k8s.io/v1beta1
 nodes:
 - role: control-plane
   extraMounts:
