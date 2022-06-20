@@ -21,12 +21,12 @@ import (
 	"fmt"
 	"time"
 
-	bootstrapclusterxk8siov1beta1 "cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
-	cloudinit "cluster-api-bootstrap-provider-microk8s/controllers/cloudinit"
+	bootstrapclusterxk8siov1beta1 "github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
+	cloudinit "github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s/controllers/cloudinit"
 
-	"cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
+	"github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
 
-	"cluster-api-bootstrap-provider-microk8s/controllers/locking"
+	"github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s/controllers/locking"
 
 	"github.com/go-logr/logr"
 	"github.com/pkg/errors"

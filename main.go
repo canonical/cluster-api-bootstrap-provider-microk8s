@@ -29,13 +29,12 @@ import (
 
 	// Import all Kubernetes client auth plugins (e.g. Azure, GCP, OIDC, etc.)
 	// to ensure that exec-entrypoint and run can make use of them.
+	"github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s/controllers"
 	"github.com/spf13/pflag"
 	_ "k8s.io/client-go/plugin/pkg/client/auth"
 	"k8s.io/client-go/tools/leaderelection/resourcelock"
 	"k8s.io/component-base/logs"
 	"k8s.io/klog/v2/klogr"
-
-	"cluster-api-bootstrap-provider-microk8s/controllers"
 
 	"k8s.io/apimachinery/pkg/runtime"
 	utilruntime "k8s.io/apimachinery/pkg/util/runtime"
@@ -49,9 +48,7 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/healthz"
 	"sigs.k8s.io/controller-runtime/pkg/log/zap"
 
-	controlplanev1beta1 "cluster-api-bootstrap-provider-microk8s/apis/controlplane/v1beta1"
-	bootstrapclusterxk8siov1beta1 "cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
-	controlplanecontrollers "cluster-api-bootstrap-provider-microk8s/controllers/controlplane"
+	bootstrapclusterxk8siov1beta1 "github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
 
 	//+kubebuilder:scaffold:imports
 	expv1 "sigs.k8s.io/cluster-api/exp/api/v1beta1"
@@ -70,7 +67,6 @@ func init() {
 	utilruntime.Must(clientgoscheme.AddToScheme(scheme))
 
 	utilruntime.Must(bootstrapclusterxk8siov1beta1.AddToScheme(scheme))
-	utilruntime.Must(controlplanev1beta1.AddToScheme(scheme))
 	//+kubebuilder:scaffold:scheme
 }
 
@@ -203,13 +199,6 @@ func main() {
 	}).SetupWithManager(context.TODO(),
 		mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MicroK8sConfig")
-		os.Exit(1)
-	}
-	if err = (&controlplanecontrollers.MicroK8sControlPlaneReconciler{
-		Client: mgr.GetClient(),
-		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(context.TODO(), mgr, concurrency(controlPlaneConcurrency)); err != nil {
-		setupLog.Error(err, "unable to create controller", "controller", "MicroK8sControlPlane")
 		os.Exit(1)
 	}
 	//+kubebuilder:scaffold:builder
