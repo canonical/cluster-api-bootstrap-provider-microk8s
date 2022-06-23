@@ -1,4 +1,4 @@
-module github.com/AlexsJones/cluster-api-bootstrap-provider-microk8s
+module github.com/canonical/cluster-api-bootstrap-provider-microk8s
 
 go 1.17
 
