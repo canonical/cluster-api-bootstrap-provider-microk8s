@@ -12,24 +12,24 @@ This project offers a cluster API bootstrap provider controller that manages the
 
 # Development
 
-1. Install clusterctl following the [upstream instructions](https://cluster-api.sigs.k8s.io/user/quick-start.html#install-clusterctl)
+  * Install clusterctl following the [upstream instructions](https://cluster-api.sigs.k8s.io/user/quick-start.html#install-clusterctl)
 ```
 curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.3/clusterctl-linux-amd64 -o clusterctl
 ```
 
-1. Install a MicroK8s bootstrap cluster
+  * Install a MicroK8s bootstrap cluster
 ```
 sudo snap install microk8s --classic
 sudo microk8s.config  > ~/.kube/config
 sudo microk8s enable dns
 ```
 
-1. Install the cluster provider of your choice. Have a look at the [cluster API book](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers) for your options at this step. You should deploy only the infrastructure controller leaving the bootstrap and control plane ones empty. For example assuming we want to provision a MicroK8s cluster on OpenStack:
+  * Install the cluster provider of your choice. Have a look at the [cluster API book](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers) for your options at this step. You should deploy only the infrastructure controller leaving the bootstrap and control plane ones empty. For example assuming we want to provision a MicroK8s cluster on OpenStack:
 ```
 clusterctl init --infrastructure openstack --bootstrap "-" --control-plane "-"
 ``` 
 
-1. Clone the two cluster API MicroK8s specific repositories and start the controllers on two separate terminals:
+  * Clone the two cluster API MicroK8s specific repositories and start the controllers on two separate terminals:
 ```
 cd $GOPATH/src/github.com/canonical/cluster-api-bootstrap-provider-microk8s/ 
 make install
@@ -42,4 +42,4 @@ make install
 make run
 ``` 
 
-1. Apply the cluster manifests describing the desired specs of the cluster you want to provision.
+  * Apply the cluster manifests describing the desired specs of the cluster you want to provision.
