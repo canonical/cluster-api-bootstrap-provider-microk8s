@@ -202,9 +202,8 @@ func TestNewJoinControlPlaneAdditionalFileEncodings(t *testing.T) {
 			Users:      nil,
 			NTP:        nil,
 		},
-		Certificates:      secret.Certificates{},
-		BootstrapToken:    "my-bootstrap-token",
-		JoinConfiguration: "my-join-config",
+		Certificates: secret.Certificates{},
+		JoinToken:    "my-bootstrap-token",
 	}
 
 	for _, certificate := range cpinput.Certificates {
@@ -244,9 +243,8 @@ func TestNewJoinControlPlaneExperimentalRetry(t *testing.T) {
 			Users:                nil,
 			NTP:                  nil,
 		},
-		Certificates:      secret.Certificates{},
-		BootstrapToken:    "my-bootstrap-token",
-		JoinConfiguration: "my-join-config",
+		Certificates: secret.Certificates{},
+		JoinToken:    "my-bootstrap-token",
 	}
 
 	for _, certificate := range cpinput.Certificates {

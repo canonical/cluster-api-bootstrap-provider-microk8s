@@ -103,7 +103,9 @@ type InitConfiguration struct {
 type JoinConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	ConnectionToken string `json:"connectionToken"`
+	ConnectionToken       string `json:"connectionToken,omitempty"`
+	IpOfNodeToConnectTo   string `json:"ipOfNodeToConnectTo,omitempty"`
+	PortOfNodeToConnectTo string `json:"portOfNodeToConnectTo,omitempty"`
 }
 
 // MicroK8sConfigSpec defines the desired state of MicroK8sConfig

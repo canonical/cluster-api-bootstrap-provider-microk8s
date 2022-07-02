@@ -17,6 +17,8 @@ limitations under the License.
 package cloudinit
 
 import (
+	"net"
+
 	"github.com/pkg/errors"
 
 	"sigs.k8s.io/cluster-api/util/secret"
@@ -24,25 +26,20 @@ import (
 
 const (
 	controlPlaneJoinCloudInit = `{{.Header}}
-{{template "files" .WriteFiles}}
--   path: /run/kubeadm/kubeadm-join-config.yaml
-    owner: root:root
-    permissions: '0640'
-    content: |
-{{.JoinConfiguration | Indent 6}}
--   path: /run/cluster-api/placeholder
-    owner: root:root
-    permissions: '0640'
-    content: "This placeholder file is used to create the /run/cluster-api sub directory in a way that is compatible with both Linux and Windows (mkdir -p /run/cluster-api does not work with Windows)"
 runcmd:
-{{- template "commands" .PreKubeadmCommands }}
-  - {{ .KubeadmCommand }} && {{ .SentinelFileCommand }}
-{{- template "commands" .PostKubeadmCommands }}
-{{- template "ntp" .NTP }}
-{{- template "users" .Users }}
-{{- template "disk_setup" .DiskSetup}}
-{{- template "fs_setup" .DiskSetup}}
-{{- template "mounts" .Mounts}}
+- sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 6443 -j REDIRECT --to-port 16443
+- sudo iptables -A PREROUTING -t nat  -p tcp --dport 6443 -j REDIRECT --to-port 16443
+- sudo apt-get update
+- sudo apt-get install iptables-persistent
+- sudo snap install microk8s --classic
+- sudo microk8s status --wait-ready
+- sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
+- sudo sleep 10
+- sudo microk8s status --wait-ready
+- sudo microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}}
+- sudo sleep 20
+- sudo microk8s status --wait-ready
+- sudo microk8s add-node --token-ttl 86400 --token {{.JoinToken}}
 `
 )
 
@@ -50,8 +47,11 @@ runcmd:
 type ControlPlaneJoinInput struct {
 	BaseUserData
 	secret.Certificates
-	BootstrapToken    string
-	JoinConfiguration string
+	ControlPlaneEndpoint     string
+	ControlPlaneEndpointType string
+	JoinToken                string
+	IPOfNodeToJoin           string
+	PortOfNodeToJoin         string
 }
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
@@ -61,6 +61,11 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) ([]byte, error) {
 	input.ControlPlane = true
 	if err := input.prepare(); err != nil {
 		return nil, err
+	}
+	input.ControlPlaneEndpointType = "DNS"
+	addr := net.ParseIP(input.ControlPlaneEndpoint)
+	if addr != nil {
+		input.ControlPlaneEndpointType = "IP"
 	}
 	userData, err := generate("JoinControlplane", controlPlaneJoinCloudInit, input)
 	if err != nil {

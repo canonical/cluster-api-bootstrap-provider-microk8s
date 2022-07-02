@@ -1,27 +1,45 @@
+## Cluster API bootstrap provider for MicroK8s
 
+[Cluster API](https://cluster-api.sigs.k8s.io/) provides declarative APIs to provision, upgrade, and operate Kubernetes clusters.
 
+The [bootstrap provider controller in cluster API](https://cluster-api.sigs.k8s.io/user/concepts.html#bootstrap-provider) is responsible for initializing the control plane and worker nodes of the provisioned cluster.
 
-## cluster-api-bootstrap-provider-microk8s
+This project offers a cluster API bootstrap provider controller that manages the node provision of a [MicroK8s](https://github.com/canonical/microk8s) cluster. It is expected to be used along with the respective [MicroK8s specific control plane provider](https://github.com/canonical/cluster-api-control-plane-provider-microk8s).
 
-<img src="images/microk8s.png" width="400px" />
 
 ![arch](images/arch.png)
 
-## Local (hacking) Development
 
-1. Run a kind create cluster with the following config object
+# Development
 
+1. Install clusterctl following the [upstream instructions](https://cluster-api.sigs.k8s.io/user/quick-start.html#install-clusterctl)
 ```
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1beta1
-nodes:
-- role: control-plane
-  extraMounts:
-    - hostPath: /var/run/docker.sock
-      containerPath: /var/run/docker.sock
+curl -L https://github.com/kubernetes-sigs/cluster-api/releases/download/v1.1.3/clusterctl-linux-amd64 -o clusterctl
 ```
 
-2. Install CAPI `clusterctl --infrastructure docker`
+1. Install a MicroK8s bootstrap cluster
+```
+sudo snap install microk8s --classic
+sudo microk8s.config  > ~/.kube/config
+sudo microk8s enable dns
+```
 
-3. Disable the kubeadm deployments or delete
-4. Delete the kubeadmin mutating validating + admission webhook
+1. Install the cluster provider of your choice. Have a look at the [cluster API book](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers) for your options at this step. You should deploy only the infrastructure controller leaving the bootstrap and control plane ones empty. For example assuming we want to provision a MicroK8s cluster on OpenStack:
+```
+clusterctl init --infrastructure openstack --bootstrap "-" --control-plane "-"
+``` 
+
+1. Clone the two cluster API MicroK8s specific repositories and start the controllers on two separate terminals:
+```
+cd $GOPATH/src/github.com/canonical/cluster-api-bootstrap-provider-microk8s/ 
+make install
+make run
+``` 
+And:
+```
+cd $GOPATH/src/github.com/canonical/cluster-api-control-plane-provider-microk8s/ 
+make install
+make run
+``` 
+
+1. Apply the cluster manifests describing the desired specs of the cluster you want to provision.

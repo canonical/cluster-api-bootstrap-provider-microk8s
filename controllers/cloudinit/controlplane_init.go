@@ -17,7 +17,7 @@ limitations under the License.
 package cloudinit
 
 import (
-	"strings"
+	"net"
 
 	"sigs.k8s.io/cluster-api/util/secret"
 )
@@ -85,8 +85,11 @@ runcmd:
 - sudo snap install microk8s --classic
 - sudo microk8s refresh-certs /var/tmp
 - sudo sleep 30
-- sudo sed -i '/^DNS.1 = kubernetes/a DNS.100 = <HOST>' /var/snap/microk8s/current/certs/csr.conf.template
+- sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
 - sudo microk8s status --wait-ready
+- sudo microk8s add-node --token-ttl 86400 --token {{.JoinToken}}
+- sudo microk8s enable dns
+- sudo sleep 15
 `
 )
 
@@ -94,9 +97,11 @@ runcmd:
 type ControlPlaneInput struct {
 	BaseUserData
 	secret.Certificates
-	ControlPlaneEndpoint string
-	ClusterConfiguration string
-	InitConfiguration    string
+	ControlPlaneEndpoint     string
+	ControlPlaneEndpointType string
+	JoinToken                string
+	ClusterConfiguration     string
+	InitConfiguration        string
 }
 
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
@@ -105,8 +110,13 @@ func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 	input.WriteFiles = input.Certificates.AsFiles()
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
-	fullCloudInit := strings.Replace(controlPlaneCloudInit, "<HOST>", input.ControlPlaneEndpoint, -1)
-	userData, err := generate("InitControlplane", fullCloudInit, input)
+	input.ControlPlaneEndpointType = "DNS"
+	addr := net.ParseIP(input.ControlPlaneEndpoint)
+	if addr != nil {
+		input.ControlPlaneEndpointType = "IP"
+	}
+
+	userData, err := generate("InitControlplane", controlPlaneCloudInit, input)
 	if err != nil {
 		return nil, err
 	}

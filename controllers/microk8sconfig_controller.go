@@ -220,6 +220,7 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	// it's a control plane join
 	if configOwner.IsControlPlaneMachine() {
 		log.Info("Reconciling control plane")
+		return r.handleJoiningControlPlaneNode(ctx, scope)
 	}
 
 	// It's a worker join
@@ -241,7 +242,7 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 
 	// if the machine has not ClusterConfiguration and InitConfiguration, requeue
 	if scope.Config.Spec.InitConfiguration == nil && scope.Config.Spec.ClusterConfiguration == nil {
-		scope.Info("Control plane is not ready, requeing joining control planes until ready.")
+		scope.Info("Control plane is not ready, requeueing joining control planes until ready.")
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -254,115 +255,27 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 	// as control plane get processed here
 	// if not the first, requeue
 	if !r.MicroK8sInitLock.Lock(ctx, scope.Cluster, machine) {
-		scope.Info("A control plane is already being initialized, requeing until control plane is ready")
+		scope.Info("A control plane is already being initialized, requeueing until control plane is ready")
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
 	defer func() {
 		if reterr != nil {
 			if !r.MicroK8sInitLock.Unlock(ctx, scope.Cluster) {
-				reterr = kerrors.NewAggregate([]error{reterr, errors.New("failed to unlock the kubeadm init lock")})
+				reterr = kerrors.NewAggregate([]error{reterr, errors.New("failed to unlock the init lock")})
 			}
 		}
 	}()
 
 	scope.Info("Creating BootstrapData for the init control plane")
 
-	// Nb. in this case JoinConfiguration should not be defined by users, but in case of misconfigurations, CABPK simply ignore it
-
-	// get both of ClusterConfiguration and InitConfiguration strings to pass to the cloud init control plane generator
-	// kubeadm allows one of these values to be empty; CABPK replace missing values with an empty config, so the cloud init generation
-	// should not handle special cases.
-
-	// kubernetesVersion := scope.ConfigOwner.KubernetesVersion()
-	// parsedVersion, err := semver.ParseTolerant(kubernetesVersion)
-	// if err != nil {
-	// 	return ctrl.Result{}, errors.Wrapf(err, "failed to parse kubernetes version %q", kubernetesVersion)
-	// }
-
-	// if scope.Config.Spec.InitConfiguration == nil {
-	// 	scope.Config.Spec.InitConfiguration = &bootstrapclusterxk8siov1beta1.InitConfiguration{
-	// 		TypeMeta: metav1.TypeMeta{
-	// 			APIVersion: "kubeadm.k8s.io/v1beta1",
-	// 			Kind:       "InitConfiguration",
-	// 		},
-	// 	}
-	// }
-	// initdata, err := kubeadmtypes.MarshalInitConfigurationForVersion(scope.Config.Spec.InitConfiguration, parsedVersion)
-	// if err != nil {
-	// 	scope.Error(err, "Failed to marshal init configuration")
-	// 	return ctrl.Result{}, err
-	// }
-
-	// if scope.Config.Spec.ClusterConfiguration == nil {
-	// 	scope.Config.Spec.ClusterConfiguration = &bootstrapv1.ClusterConfiguration{
-	// 		TypeMeta: metav1.TypeMeta{
-	// 			APIVersion: "kubeadm.k8s.io/v1beta1",
-	// 			Kind:       "ClusterConfiguration",
-	// 		},
-	// 	}
-	// }
-
-	// // injects into config.ClusterConfiguration values from top level object
-	// r.reconcileTopLevelObjectSettings(ctx, scope.Cluster, machine, scope.Config)
-
-	// clusterdata, err := kubeadmtypes.MarshalClusterConfigurationForVersion(scope.Config.Spec.ClusterConfiguration, parsedVersion)
-	// if err != nil {
-	// 	scope.Error(err, "Failed to marshal cluster configuration")
-	// 	return ctrl.Result{}, err
-	// }
-
-	// certificates := secret.NewCertificatesForInitialControlPlane(scope.Config.Spec.ClusterConfiguration)
-	// err = certificates.LookupOrGenerate(
-	// 	ctx,
-	// 	r.Client,
-	// 	util.ObjectKey(scope.Cluster),
-	// 	*metav1.NewControllerRef(scope.Config, bootstrapv1.GroupVersion.WithKind("KubeadmConfig")),
-	// )
-	// if err != nil {
-	// 	conditions.MarkFalse(scope.Config, bootstrapv1.CertificatesAvailableCondition, bootstrapv1.CertificatesGenerationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-	// 	return ctrl.Result{}, err
-	// }
-	// conditions.MarkTrue(scope.Config, bootstrapv1.CertificatesAvailableCondition)
-
-	// verbosityFlag := ""
-	// if scope.Config.Spec.Verbosity != nil {
-	// 	verbosityFlag = fmt.Sprintf("--v %s", strconv.Itoa(int(*scope.Config.Spec.Verbosity)))
-	// }
-
-	// files, err := r.resolveFiles(ctx, scope.Config)
-	// if err != nil {
-	// 	conditions.MarkFalse(scope.Config, bootstrapv1.DataSecretAvailableCondition, bootstrapv1.DataSecretGenerationFailedReason, clusterv1.ConditionSeverityWarning, err.Error())
-	// 	return ctrl.Result{}, err
-	// }
-
 	controlPlaneInput := &cloudinit.ControlPlaneInput{
-		BaseUserData: cloudinit.BaseUserData{
-			//	AdditionalFiles:     files,
-			//	NTP:                 scope.Config.Spec.NTP,
-			//	PreKubeadmCommands:  scope.Config.Spec.PreKubeadmCommands,
-			//	PostKubeadmCommands: scope.Config.Spec.PostKubeadmCommands,
-			//	Users:               scope.Config.Spec.Users,
-			//	Mounts:              scope.Config.Spec.Mounts,
-			//	DiskSetup:           scope.Config.Spec.DiskSetup,
-			//	KubeadmVerbosity:    verbosityFlag,
-		},
+		BaseUserData:         cloudinit.BaseUserData{},
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
-		//	InitConfiguration:    initdata,
-		//	ClusterConfiguration: clusterdata,
-		//	Certificates:         certificates,
+		JoinToken:            "abcdefgwijklmnopqrstuvwxyzABCDEF",
 	}
 
-	// var bootstrapInitData []byte
-	// switch scope.Config.Spec.Format {
-	// case bootstrapv1.Ignition:
-	// 	bootstrapInitData, _, err = ignition.NewInitControlPlane(&ignition.ControlPlaneInput{
-	// 		ControlPlaneInput: controlPlaneInput,
-	// 		Ignition:          scope.Config.Spec.Ignition,
-	// 	})
-	// default:
 	bootstrapInitData, err := cloudinit.NewInitControlPlane(controlPlaneInput)
-	// }
 
 	if err != nil {
 		scope.Error(err, "Failed to generate user data for bootstrap control plane")
@@ -376,6 +289,70 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 
 	return ctrl.Result{}, nil
 }
+
+func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Context, scope *Scope) (_ ctrl.Result, reterr error) {
+	// if it's NOT a control plane machine, requeue
+	if !scope.ConfigOwner.IsControlPlaneMachine() {
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	// if the machine has not ClusterConfiguration and InitConfiguration, requeue
+	if scope.Config.Spec.InitConfiguration == nil && scope.Config.Spec.ClusterConfiguration == nil {
+		scope.Info("Control plane is not ready, requeing joining control planes until ready.")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	machine := &clusterv1.Machine{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(scope.ConfigOwner.Object, machine); err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "cannot convert %s to Machine", scope.ConfigOwner.GetKind())
+	}
+
+	// acquire the init lock so that only only one machine joins each time
+	if !r.MicroK8sInitLock.Lock(ctx, scope.Cluster, machine) {
+		scope.Info("A control plane node is already being handled, requeing until control plane can be extended with this node")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	defer func() {
+		if reterr != nil {
+			if !r.MicroK8sInitLock.Unlock(ctx, scope.Cluster) {
+				reterr = kerrors.NewAggregate([]error{reterr, errors.New("failed to unlock the init lock")})
+			}
+		}
+	}()
+
+	scope.Info("Creating BootstrapData for the join control plane")
+
+	microk8sConfig := &bootstrapclusterxk8siov1beta1.MicroK8sConfig{}
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Namespace: machine.Spec.Bootstrap.ConfigRef.Namespace,
+		Name:      machine.Spec.Bootstrap.ConfigRef.Name,
+	}, microk8sConfig); err != nil {
+		return ctrl.Result{}, err
+	}
+	controlPlaneInput := &cloudinit.ControlPlaneJoinInput{
+		BaseUserData:         cloudinit.BaseUserData{},
+		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
+		JoinToken:            "abcdefgwijklmnopqrstuvwxyzABCDEF",
+		PortOfNodeToJoin:     microk8sConfig.Spec.JoinConfiguration.PortOfNodeToConnectTo,
+		IPOfNodeToJoin:       microk8sConfig.Spec.JoinConfiguration.IpOfNodeToConnectTo,
+	}
+
+	bootstrapInitData, err := cloudinit.NewJoinControlPlane(controlPlaneInput)
+
+	if err != nil {
+		scope.Error(err, "Failed to generate user data for bootstrap control plane")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.storeBootstrapData(ctx, scope, bootstrapInitData); err != nil {
+		scope.Error(err, "Failed to store bootstrap data")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
 func (r *MicroK8sConfigReconciler) storeBootstrapData(ctx context.Context, scope *Scope, data []byte) error {
 	log := ctrl.LoggerFrom(ctx)
 

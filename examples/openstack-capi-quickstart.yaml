@@ -1,0 +1,123 @@
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: capi-openstack
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks: ["192.168.0.0/16"] # CIDR block used by Calico.
+    serviceDomain: "cluster.local"
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
+    kind: OpenStackCluster
+    name: capi-openstack
+  controlPlaneRef:
+    kind: MicroK8sControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    name: capi-openstack-control-plane
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
+kind: OpenStackCluster
+metadata:
+  name: capi-openstack
+spec:
+  cloudName: openstack
+  identityRef:
+    name: capi-openstack-cloud-config
+    kind: Secret
+  #apiServerLoadBalancer:
+  #  enabled: true
+  managedSecurityGroups: true
+  nodeCidr: 10.6.0.0/24
+  dnsNameservers: []
+  externalNetworkId: 1a154612-1c48-48b8-9352-32d230dd9363
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: MicroK8sControlPlane
+metadata:
+  name: capi-openstack-control-plane
+  namespace: default
+spec:
+  controlPlaneConfig:
+    controlplane:
+      joinConfiguration:
+        connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:
+        bootstrapTokens:
+        - token: "ALSOMYTOKEN"
+  machineTemplate:
+    infrastructureTemplate:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
+      kind: OpenStackMachineTemplate
+      name: capi-openstack-control-plane
+  replicas: 4
+  version: v1.23.0
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
+kind: OpenStackMachineTemplate
+metadata:
+  name: capi-openstack-control-plane
+spec:
+  template:
+    spec:
+      flavor: m1.large
+      image: ubuntu-20.04
+      sshKeyName: myssh
+      cloudName: openstack
+      identityRef:
+        name: capi-openstack-cloud-config
+        kind: Secret
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "capi-openstack-md-0"
+spec:
+  clusterName: "capi-openstack"
+  replicas: 0
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "capi-openstack"
+      version: "1.23.0"
+      failureDomain: nova
+      bootstrap:
+        configRef:
+          name: "capi-openstack-md-0"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: MicroK8sConfigTemplate
+      infrastructureRef:
+        name: "capi-openstack-md-0"
+        apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
+        kind: OpenStackMachineTemplate
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
+kind: OpenStackMachineTemplate
+metadata:
+  name: capi-openstack-md-0
+spec:
+  template:
+    spec:
+      cloudName: openstack
+      identityRef:
+        name: capi-openstack-cloud-config
+        kind: Secret
+      flavor: m1.large
+      image: ubuntu-20.04
+      sshKeyName: myssh
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: MicroK8sConfigTemplate
+metadata:
+  name: capi-openstack-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      joinConfiguration:
+        connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:
+        bootstrapTokens:
+        - token: "MYTOKEN"
