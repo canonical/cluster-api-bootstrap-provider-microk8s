@@ -205,14 +205,14 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		//	config.Spec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
 	}
 
-	// it's a control plane join
+	// it's a control plane join or a worker node?
 	if configOwner.IsControlPlaneMachine() {
 		log.Info("Reconciling control plane")
 		return r.handleJoiningControlPlaneNode(ctx, scope)
+	} else {
+		log.Info("Reconciling worker")
+		return r.handleJoiningWorkerNode(ctx, scope)
 	}
-
-	// It's a worker join
-	return ctrl.Result{}, nil
 }
 
 func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Context, scope *Scope) (_ ctrl.Result, reterr error) {
@@ -291,7 +291,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 
 	// acquire the init lock so that only only one machine joins each time
 	if !r.MicroK8sInitLock.Lock(ctx, scope.Cluster, machine) {
-		scope.Info("A control plane node is already being handled, requeing until control plane can be extended with this node")
+		scope.Info("A node is already being handled, requeueing until cluster can be extended with this node")
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
@@ -321,6 +321,68 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinControlPlane(controlPlaneInput)
+
+	if err != nil {
+		scope.Error(err, "Failed to generate user data for bootstrap control plane")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.storeBootstrapData(ctx, scope, bootstrapInitData); err != nil {
+		scope.Error(err, "Failed to store bootstrap data")
+		return ctrl.Result{}, err
+	}
+
+	return ctrl.Result{}, nil
+}
+
+func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, scope *Scope) (_ ctrl.Result, reterr error) {
+	// if it's a control plane machine, requeue
+	if scope.ConfigOwner.IsControlPlaneMachine() {
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	// if the machine has not ClusterConfiguration, requeue
+	if scope.Config.Spec.ClusterConfiguration == nil {
+		scope.Info("Control plane is not ready, requeueing joining of worker until ready.")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	machine := &clusterv1.Machine{}
+	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(scope.ConfigOwner.Object, machine); err != nil {
+		return ctrl.Result{}, errors.Wrapf(err, "cannot convert %s to Machine", scope.ConfigOwner.GetKind())
+	}
+
+	// acquire the init lock so that only only one machine joins each time
+	if !r.MicroK8sInitLock.Lock(ctx, scope.Cluster, machine) {
+		scope.Info("A node is already being handled, requeueing until cluster can be extended with this node")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
+	defer func() {
+		if reterr != nil {
+			if !r.MicroK8sInitLock.Unlock(ctx, scope.Cluster) {
+				reterr = kerrors.NewAggregate([]error{reterr, errors.New("failed to unlock the init lock")})
+			}
+		}
+	}()
+
+	scope.Info("Creating BootstrapData for the joining worker")
+
+	microk8sConfig := &bootstrapclusterxk8siov1beta1.MicroK8sConfig{}
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Namespace: machine.Spec.Bootstrap.ConfigRef.Namespace,
+		Name:      machine.Spec.Bootstrap.ConfigRef.Name,
+	}, microk8sConfig); err != nil {
+		return ctrl.Result{}, err
+	}
+	workerInput := &cloudinit.WorkerJoinInput{
+		BaseUserData:     cloudinit.BaseUserData{},
+		JoinToken:        "abcdefgwijklmnopqrstuvwxyzABCDEF",
+		PortOfNodeToJoin: microk8sConfig.Spec.JoinConfiguration.PortOfNodeToConnectTo,
+		IPOfNodeToJoin:   microk8sConfig.Spec.JoinConfiguration.IpOfNodeToConnectTo,
+	}
+
+	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)
 
 	if err != nil {
 		scope.Error(err, "Failed to generate user data for bootstrap control plane")

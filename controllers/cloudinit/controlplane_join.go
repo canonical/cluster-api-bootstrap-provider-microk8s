@@ -59,6 +59,7 @@ type ControlPlaneJoinInput struct {
 	JoinToken                string
 	IPOfNodeToJoin           string
 	PortOfNodeToJoin         string
+	Version                  string
 }
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
