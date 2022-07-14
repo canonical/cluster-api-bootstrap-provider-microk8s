@@ -168,7 +168,7 @@ func (in *MicroK8sConfigSpec) DeepCopyInto(out *MicroK8sConfigSpec) {
 	if in.InitConfiguration != nil {
 		in, out := &in.InitConfiguration, &out.InitConfiguration
 		*out = new(InitConfiguration)
-		(*in).DeepCopyInto(*out)
+		**out = **in
 	}
 	if in.JoinConfiguration != nil {
 		in, out := &in.JoinConfiguration, &out.JoinConfiguration

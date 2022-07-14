@@ -62,73 +62,14 @@ spec:
                       schemas to the latest internal value, and may reject unrecognized
                       values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
-                  bootstrapTokens:
-                    description: BootstrapTokens is respected at `kubeadm init` time
-                      and describes a set of Bootstrap Tokens to create. This information
-                      IS NOT uploaded to the kubeadm cluster configmap, partly because
-                      of its sensitive nature
-                    items:
-                      properties:
-                        description:
-                          description: Description sets a human-friendly message why
-                            this token exists and what it's used for, so other administrators
-                            can know its purpose.
-                          type: string
-                        expires:
-                          description: Expires specifies the timestamp when this token
-                            expires. Defaults to being set dynamically at runtime
-                            based on the TTL. Expires and TTL are mutually exclusive.
-                          format: date-time
-                          type: string
-                        groups:
-                          description: Groups specifies the extra groups that this
-                            token will authenticate as when/if used for authentication
-                          items:
-                            type: string
-                          type: array
-                        token:
-                          description: Token is used for establishing bidirectional
-                            trust between nodes and control-planes. Used for joining
-                            nodes in the cluster.
-                          type: string
-                        ttl:
-                          description: TTL defines the time to live for this token.
-                            Defaults to 24h. Expires and TTL are mutually exclusive.
-                          type: string
-                        usages:
-                          description: Usages describes the ways in which this token
-                            can be used. Can by default be used for establishing bidirectional
-                            trust, but that can be changed here.
-                          items:
-                            type: string
-                          type: array
-                      required:
-                      - token
-                      type: object
-                    type: array
                   kind:
                     description: 'Kind is a string value representing the REST resource
                       this object represents. Servers may infer this from the endpoint
                       the client submits requests to. Cannot be updated. In CamelCase.
                       More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                     type: string
-                  localAPIEndpoint:
-                    properties:
-                      host:
-                        description: The hostname on which the API server is serving.
-                        type: string
-                      port:
-                        description: The port on which the API server is serving.
-                        format: int32
-                        type: integer
-                    required:
-                    - host
-                    - port
-                    type: object
                 type: object
               joinConfiguration:
-                description: Foo is an example field of MicroK8sConfig. Edit microk8sconfig_types.go
-                  to remove/update
                 properties:
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this
@@ -139,6 +80,8 @@ spec:
                   connectionToken:
                     type: string
                   ipOfNodeToConnectTo:
+                    description: IpOfNodeToConnectTo and PortOfNodeToConnectTo are
+                      set by the microk8s control-plane provider
                     type: string
                   kind:
                     description: 'Kind is a string value representing the REST resource
