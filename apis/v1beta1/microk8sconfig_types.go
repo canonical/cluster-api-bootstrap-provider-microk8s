@@ -17,9 +17,6 @@ limitations under the License.
 package v1beta1
 
 import (
-	"fmt"
-	"net"
-
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
 	v1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
@@ -35,26 +32,10 @@ type ClusterConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 }
 
-type APIEndpoint struct {
-	// The hostname on which the API server is serving.
-	Host string `json:"host"`
-
-	// The port on which the API server is serving.
-	Port int32 `json:"port"`
-}
-
-// String returns a formatted version HOST:PORT of this APIEndpoint.
-func (v APIEndpoint) String() string {
-	return net.JoinHostPort(v.Host, fmt.Sprintf("%d", v.Port))
-}
-
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
 type InitConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
-
-	// +optional
-	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

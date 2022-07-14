@@ -43,6 +43,7 @@ spec:
     controlplane:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:
   machineTemplate:
     infrastructureTemplate:
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
@@ -115,3 +116,4 @@ spec:
     spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:

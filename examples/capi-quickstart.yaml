@@ -34,7 +34,7 @@ spec:
     controlplane:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
-        
+      initConfiguration:
  
   #  clusterConfiguration:
   #    apiServer:
@@ -43,6 +43,7 @@ spec:
   #    controllerManager:
   #      extraArgs:
   #        cloud-provider: aws
+  #  initConfiguration:
   #    nodeRegistration:
   #      kubeletExtraArgs:
   #        cloud-provider: aws
@@ -118,6 +119,7 @@ spec:
     spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+      initConfiguration:
         #nodeRegistration:
         #  kubeletExtraArgs:
         #    cloud-provider: aws
