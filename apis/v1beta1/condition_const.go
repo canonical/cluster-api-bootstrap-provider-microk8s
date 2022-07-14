@@ -33,13 +33,4 @@ const (
 	// by the users.
 	// IMPORTANT: This condition won't be re-created after clusterctl move.
 	CertificatesAvailableCondition clusterv1.ConditionType = "CertificatesAvailable"
-
-	// CertificatesGenerationFailedReason (Severity=Warning) documents a KubeadmConfig controller detecting
-	// an error while generating certificates; those kind of errors are usually temporary and the controller
-	// automatically recover from them.
-	CertificatesGenerationFailedReason = "CertificatesGenerationFailed"
-
-	// CertificatesCorruptedReason (Severity=Error) documents a KubeadmConfig controller detecting
-	// an error while while retrieving certificates for a joining node.
-	CertificatesCorruptedReason = "CertificatesCorrupted"
 )
