@@ -43,7 +43,8 @@ type InitConfiguration struct {
 type JoinConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	ConnectionToken       string `json:"connectionToken,omitempty"`
+	ConnectionToken string `json:"connectionToken,omitempty"`
+	// IpOfNodeToConnectTo and PortOfNodeToConnectTo are set by the microk8s control-plane provider
 	IpOfNodeToConnectTo   string `json:"ipOfNodeToConnectTo,omitempty"`
 	PortOfNodeToConnectTo string `json:"portOfNodeToConnectTo,omitempty"`
 }
@@ -56,11 +57,8 @@ type MicroK8sConfigSpec struct {
 	// +optional
 	ClusterConfiguration *ClusterConfiguration `json:"clusterConfiguration,omitempty"`
 	InitConfiguration    *InitConfiguration    `json:"initConfiguration,omitempty"`
-	// Foo is an example field of MicroK8sConfig. Edit microk8sconfig_types.go to remove/update
-	JoinConfiguration *JoinConfiguration `json:"joinConfiguration,omitempty"`
+	JoinConfiguration    *JoinConfiguration    `json:"joinConfiguration,omitempty"`
 }
-
-// MicroK8sConfigStatus defines the observed state of MicroK8sConfig
 
 // MicroK8sConfigStatus defines the observed state of MicroK8sConfig
 type MicroK8sConfigStatus struct {
