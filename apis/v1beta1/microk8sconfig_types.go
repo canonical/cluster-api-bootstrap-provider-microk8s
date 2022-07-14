@@ -35,32 +35,6 @@ type ClusterConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 }
 
-type BootstrapToken struct {
-	// Token is used for establishing bidirectional trust between nodes and control-planes.
-	// Used for joining nodes in the cluster.
-	Token string `json:"token"`
-	// Description sets a human-friendly message why this token exists and what it's used
-	// for, so other administrators can know its purpose.
-	// +optional
-	Description string `json:"description,omitempty"`
-	// TTL defines the time to live for this token. Defaults to 24h.
-	// Expires and TTL are mutually exclusive.
-	// +optional
-	TTL *metav1.Duration `json:"ttl,omitempty"`
-	// Expires specifies the timestamp when this token expires. Defaults to being set
-	// dynamically at runtime based on the TTL. Expires and TTL are mutually exclusive.
-	// +optional
-	Expires *metav1.Time `json:"expires,omitempty"`
-	// Usages describes the ways in which this token can be used. Can by default be used
-	// for establishing bidirectional trust, but that can be changed here.
-	// +optional
-	Usages []string `json:"usages,omitempty"`
-	// Groups specifies the extra groups that this token will authenticate as when/if
-	// used for authentication
-	// +optional
-	Groups []string `json:"groups,omitempty"`
-}
-
 type APIEndpoint struct {
 	// The hostname on which the API server is serving.
 	Host string `json:"host"`
@@ -78,11 +52,6 @@ func (v APIEndpoint) String() string {
 
 type InitConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
-
-	// BootstrapTokens is respected at `kubeadm init` time and describes a set of Bootstrap Tokens to create.
-	// This information IS NOT uploaded to the kubeadm cluster configmap, partly because of its sensitive nature
-	// +optional
-	BootstrapTokens []BootstrapToken `json:"bootstrapTokens,omitempty"`
 
 	// +optional
 	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`

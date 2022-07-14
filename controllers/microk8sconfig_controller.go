@@ -183,19 +183,7 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	// Status is ready means a config has been generated.
 	case config.Status.Ready:
-		// if config.Spec.JoinConfiguration != nil && config.Spec.JoinConfiguration.Discovery.BootstrapToken != nil {
-		// 	if !configOwner.IsInfrastructureReady() {
-		// 		// If the BootstrapToken has been generated for a join and the infrastructure is not ready.
-		// 		// This indicates the token in the join config has not been consumed and it may need a refresh.
-		// 		//	return r.refreshBootstrapToken(ctx, config, cluster)
-		// 	}
-		// 	if configOwner.IsMachinePool() {
-		// 		// If the BootstrapToken has been generated and infrastructure is ready but the configOwner is a MachinePool,
-		// 		// we rotate the token to keep it fresh for future scale ups.
-		// 		//		return r.rotateMachinePoolBootstrapToken(ctx, config, cluster, scope)
-		// 	}
-		// }
-		// In any other case just return as the config is already generated and need not be generated again.
+		// Just return as the config doesn't need to be generated again.
 		return ctrl.Result{}, nil
 	}
 

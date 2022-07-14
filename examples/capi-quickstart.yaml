@@ -34,9 +34,6 @@ spec:
     controlplane:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
-      initConfiguration:
-        bootstrapTokens:
-        - token: "ALSOMYTOKEN"
         
  
   #  clusterConfiguration:
@@ -46,9 +43,6 @@ spec:
   #    controllerManager:
   #      extraArgs:
   #        cloud-provider: aws
-  #  initConfiguration:
-  #     bootstrapTokens:
-  #     - token: "MYTOKEN"
   #    nodeRegistration:
   #      kubeletExtraArgs:
   #        cloud-provider: aws
@@ -124,9 +118,6 @@ spec:
     spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
-      initConfiguration:
-        bootstrapTokens:
-        - token: "MYTOKEN"
         #nodeRegistration:
         #  kubeletExtraArgs:
         #    cloud-provider: aws
