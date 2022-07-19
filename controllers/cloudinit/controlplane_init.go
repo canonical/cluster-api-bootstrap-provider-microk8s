@@ -22,6 +22,37 @@ import (
 	"sigs.k8s.io/cluster-api/util/secret"
 )
 
+/*
+The following cloudinit includes a number of hacks we need to address as we move forward:
+
+ - hardcoded CA under /var/tmp/
+A single CA is needed to run the cluster. We need to inject a predefined/known CA
+because we need to craft a kubeconfig file to access the cluster. If we were to use the CA
+MicroK8s creates during snap install we would not know what that CA would be and thus we would not
+be able to produce the kubeconfig file.
+Instead of having the CA hardcoded we should allow the user to point to an existing secret
+with the required cert/key. If the user does not point to a secret we should generate a CA inside the
+cluster-api-bootstrap provider and use that one.
+
+ - redirect the API server port from 16443 to 6443
+By default MicroK8s sets the API server port to 16443. We should investigate two options here:
+1. See how we can configure the security groups of the infra providers to allow 16443.
+2. Get the API server port configured to 6443
+
+ - cluster agent port (25000) and dqlite port (19001) set to use etcd ports (2379, 2380)
+The default ports of cluster agent and dqlite are blocked by security groups and as a temporary
+workaround we reuse the etcd ports that are open in the infra providers we are testing with.
+We have to find a way to get the security groups (setup by the infra providers) to allow custom ports.
+
+ - Token for joining nodes
+We inject a token for joining nodes. At this point this token is hardcoded with a long TTL.
+To the very least we should make the TTL and tokens configurable. Ideally, there would be a mechanism
+to join a node without the need of such token.
+
+ - This cloudinit (including the hacks) is somewhat duplicated for the joining nodes we should
+address this.
+*/
+
 const (
 	controlPlaneCloudInit = `{{.Header}}
 write_files:
