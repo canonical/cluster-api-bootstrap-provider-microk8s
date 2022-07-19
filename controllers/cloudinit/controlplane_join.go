@@ -33,6 +33,13 @@ runcmd:
 - sudo apt-get install iptables-persistent
 - sudo snap install microk8s --classic
 - sudo microk8s status --wait-ready
+- sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
+- sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
+- sudo sed -i 's/19001/2380/' /var/tmp/port-update.yaml
+- sudo microk8s stop
+- sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
+- sudo microk8s start
+- sudo microk8s status --wait-ready
 - sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
 - sudo sleep 10
 - sudo microk8s status --wait-ready
