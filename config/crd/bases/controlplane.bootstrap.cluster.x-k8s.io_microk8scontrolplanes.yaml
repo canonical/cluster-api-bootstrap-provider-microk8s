@@ -157,15 +157,6 @@ spec:
                   - type
                   type: object
                 type: array
-              failureMessage:
-                description: ErrorMessage indicates that there is a terminal problem
-                  reconciling the state, and will be set to a descriptive error message.
-                type: string
-              failureReason:
-                description: FailureReason indicates that there is a terminal problem
-                  reconciling the state, and will be set to a token value suitable
-                  for programmatic interpretation.
-                type: string
               initialized:
                 description: Initialized denotes whether or not the control plane
                   has the uploaded kubeadm-config configmap.

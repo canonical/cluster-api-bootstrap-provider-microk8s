@@ -93,17 +93,6 @@ type MicroK8sControlPlaneStatus struct {
 	// +optional
 	Ready bool `json:"ready"`
 
-	// FailureReason indicates that there is a terminal problem reconciling the
-	// state, and will be set to a token value suitable for
-	// programmatic interpretation.
-	// +optional
-	FailureReason string `json:"failureReason,omitempty"`
-
-	// ErrorMessage indicates that there is a terminal problem reconciling the
-	// state, and will be set to a descriptive error message.
-	// +optional
-	FailureMessage *string `json:"failureMessage,omitempty"`
-
 	// ObservedGeneration is the latest generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
