@@ -62,50 +62,6 @@ spec:
                       schemas to the latest internal value, and may reject unrecognized
                       values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
-                  bootstrapTokens:
-                    description: BootstrapTokens is respected at `kubeadm init` time
-                      and describes a set of Bootstrap Tokens to create. This information
-                      IS NOT uploaded to the kubeadm cluster configmap, partly because
-                      of its sensitive nature
-                    items:
-                      properties:
-                        description:
-                          description: Description sets a human-friendly message why
-                            this token exists and what it's used for, so other administrators
-                            can know its purpose.
-                          type: string
-                        expires:
-                          description: Expires specifies the timestamp when this token
-                            expires. Defaults to being set dynamically at runtime
-                            based on the TTL. Expires and TTL are mutually exclusive.
-                          format: date-time
-                          type: string
-                        groups:
-                          description: Groups specifies the extra groups that this
-                            token will authenticate as when/if used for authentication
-                          items:
-                            type: string
-                          type: array
-                        token:
-                          description: Token is used for establishing bidirectional
-                            trust between nodes and control-planes. Used for joining
-                            nodes in the cluster.
-                          type: string
-                        ttl:
-                          description: TTL defines the time to live for this token.
-                            Defaults to 24h. Expires and TTL are mutually exclusive.
-                          type: string
-                        usages:
-                          description: Usages describes the ways in which this token
-                            can be used. Can by default be used for establishing bidirectional
-                            trust, but that can be changed here.
-                          items:
-                            type: string
-                          type: array
-                      required:
-                      - token
-                      type: object
-                    type: array
                   kind:
                     description: 'Kind is a string value representing the REST resource
                       this object represents. Servers may infer this from the endpoint

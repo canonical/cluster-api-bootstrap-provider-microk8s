@@ -89,11 +89,6 @@ func (v APIEndpoint) String() string {
 type InitConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// BootstrapTokens is respected at `kubeadm init` time and describes a set of Bootstrap Tokens to create.
-	// This information IS NOT uploaded to the kubeadm cluster configmap, partly because of its sensitive nature
-	// +optional
-	BootstrapTokens []BootstrapToken `json:"bootstrapTokens,omitempty"`
-
 	// +optional
 	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`
 }
