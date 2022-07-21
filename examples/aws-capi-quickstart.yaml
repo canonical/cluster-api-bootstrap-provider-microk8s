@@ -1,128 +1,104 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: capi-quickstart
+  name: capi-aws-19072022-4
   namespace: default
 spec:
-#  clusterNetwork:
-#    apiServerPort: 6443
+  # clusterNetwork:
+  #   pods:
+  #     cidrBlocks: ["192.168.0.0/16"] # CIDR block used by Calico.
+  #   serviceDomain: "cluster.local"
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     kind: MicroK8sControlPlane
-    name: capi-quickstart-control-plane
+    name: capi-aws-19072022-4-control-plane
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: AWSCluster
-    name: capi-quickstart
+    name: capi-aws-19072022-4
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSCluster
 metadata:
-  name: capi-quickstart
+  name: capi-aws-19072022-4
   namespace: default
 spec:
   region: us-east-1
-  sshKeyName: ad-hoc
+  sshKeyName: default
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: MicroK8sControlPlane
 metadata:
-  name: capi-quickstart-control-plane
+  name: capi-aws-19072022-4-control-plane
   namespace: default
 spec:
   controlPlaneConfig:
     controlplane:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
-        
- 
-  #  clusterConfiguration:
-  #    apiServer:
-  #      extraArgs:
-  #        cloud-provider: aws
-  #    controllerManager:
-  #      extraArgs:
-  #        cloud-provider: aws
-  #  initConfiguration:
-  #     bootstrapTokens:
-  #     - token: "MYTOKEN"
-  #    nodeRegistration:
-  #      kubeletExtraArgs:
-  #        cloud-provider: aws
-  #      name: '{{ ds.meta_data.local_hostname }}'
-  #  joinConfiguration:
-  #    nodeRegistration:
-  #      kubeletExtraArgs:
-  #        cloud-provider: aws
-  #      name: '{{ ds.meta_data.local_hostname }}'
   machineTemplate:
     infrastructureTemplate:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: AWSMachineTemplate
-      name: capi-quickstart-control-plane
-  replicas: 3
+      name: capi-aws-19072022-4-control-plane
+  replicas: 4
   version: v1.23.0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
-  name: capi-quickstart-control-plane
+  name: capi-aws-19072022-4-control-plane
   namespace: default
 spec:
   template:
     spec:
       iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
       instanceType: t3.large
-      sshKeyName: ad-hoc
+      sshKeyName: default
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: capi-quickstart-md-0
+  name: capi-aws-19072022-4-md-0
   namespace: default
 spec:
-  clusterName: capi-quickstart
+  clusterName: capi-aws-19072022-4
   replicas: 0
   selector:
     matchLabels: null
   template:
     spec:
+      clusterName: capi-aws-19072022-4
+      version: v1.23.0     
       bootstrap:
         configRef:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: MicroK8sConfigTemplate
-          name: capi-quickstart-md-0
-      clusterName: capi-quickstart
+          name: capi-aws-19072022-4-md-0
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
-        name: capi-quickstart-md-0
-      version: v1.23.0
+        name: capi-aws-19072022-4-md-0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
-  name: capi-quickstart-md-0
+  name: capi-aws-19072022-4-md-0
   namespace: default
 spec:
   template:
     spec:
       iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
       instanceType: t3.large
-      sshKeyName: ad-hoc
+      sshKeyName: default
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: MicroK8sConfigTemplate
 metadata:
-  name: capi-quickstart-md-0
+  name: capi-aws-19072022-4-md-0
   namespace: default
 spec:
   template:
     spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
-      #initConfiguration:
-        #nodeRegistration:
-        #  kubeletExtraArgs:
-        #    cloud-provider: aws
-        #  name: '{{ ds.meta_data.local_hostname }}'

@@ -44,8 +44,6 @@ spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
       initConfiguration:
-        bootstrapTokens:
-        - token: "ALSOMYTOKEN"
   machineTemplate:
     infrastructureTemplate:
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
@@ -119,5 +117,3 @@ spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
       initConfiguration:
-        bootstrapTokens:
-        - token: "MYTOKEN"
