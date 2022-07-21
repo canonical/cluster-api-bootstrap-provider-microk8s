@@ -126,11 +126,6 @@ func (in *MicroK8sControlPlaneStatus) DeepCopyInto(out *MicroK8sControlPlaneStat
 		*out = new(string)
 		**out = **in
 	}
-	if in.FailureMessage != nil {
-		in, out := &in.FailureMessage, &out.FailureMessage
-		*out = new(string)
-		**out = **in
-	}
 	if in.Conditions != nil {
 		in, out := &in.Conditions, &out.Conditions
 		*out = make(apiv1beta1.Conditions, len(*in))
