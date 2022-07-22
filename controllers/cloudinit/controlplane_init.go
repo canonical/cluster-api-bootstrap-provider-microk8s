@@ -140,7 +140,6 @@ type ControlPlaneInput struct {
 	JoinToken                string
 	ClusterConfiguration     string
 	InitConfiguration        string
-	Version                  string
 }
 
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
