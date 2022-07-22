@@ -31,7 +31,7 @@ runcmd:
 - sudo iptables -A PREROUTING -t nat  -p tcp --dport 6443 -j REDIRECT --to-port 16443
 - sudo apt-get update
 - sudo apt-get install iptables-persistent
-- sudo snap install microk8s --classic
+- sudo sh -c "while ! snap install microk8s --classic ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
 - sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
@@ -43,7 +43,7 @@ runcmd:
 - sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
 - sudo sleep 10
 - sudo microk8s status --wait-ready
-- sudo microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}}
+- sudo sh -c "while ! microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} ; do sleep 10 ; echo 'Retry join'; done"
 - sudo sleep 20
 - sudo microk8s status --wait-ready
 - sudo microk8s add-node --token-ttl 86400 --token {{.JoinToken}}

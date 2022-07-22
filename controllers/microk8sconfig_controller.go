@@ -341,12 +341,6 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	// if the machine has not ClusterConfiguration, requeue
-	if scope.Config.Spec.ClusterConfiguration == nil {
-		scope.Info("Control plane is not ready, requeueing joining of worker until ready.")
-		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
-	}
-
 	machine := &clusterv1.Machine{}
 	if err := runtime.DefaultUnstructuredConverter.FromUnstructured(scope.ConfigOwner.Object, machine); err != nil {
 		return ctrl.Result{}, errors.Wrapf(err, "cannot convert %s to Machine", scope.ConfigOwner.GetKind())
@@ -375,11 +369,40 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 	}, microk8sConfig); err != nil {
 		return ctrl.Result{}, err
 	}
+
+	// TODO: Make this port configurable. Make sure you address the same issue in the controller provider
+	portOfNodeToConnectTo := "2379"
+	ipOfNodeToConnectTo := ""
+
+	nodes, err := r.getControlPlaneMachinesForCluster(ctx, util.ObjectKey(scope.Cluster))
+	if err != nil {
+		scope.Error(err, "Lookup control plane nodes")
+		return ctrl.Result{}, err
+	}
+
+	for _, node := range nodes {
+		if ipOfNodeToConnectTo != "" {
+			break
+		}
+		if node.Spec.ProviderID != nil && node.Status.Phase == "Running" {
+			for _, address := range node.Status.Addresses {
+				if address.Address != "" {
+					ipOfNodeToConnectTo = address.Address
+					break
+				}
+			}
+		}
+	}
+	if ipOfNodeToConnectTo == "" {
+		scope.Info("Failed to discover a control plane IP, requeueing.")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
 	workerInput := &cloudinit.WorkerJoinInput{
 		BaseUserData:     cloudinit.BaseUserData{},
 		JoinToken:        "abcdefgwijklmnopqrstuvwxyzABCDEF",
-		PortOfNodeToJoin: microk8sConfig.Spec.JoinConfiguration.PortOfNodeToConnectTo,
-		IPOfNodeToJoin:   microk8sConfig.Spec.JoinConfiguration.IpOfNodeToConnectTo,
+		PortOfNodeToJoin: portOfNodeToConnectTo,
+		IPOfNodeToJoin:   ipOfNodeToConnectTo,
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)
@@ -539,4 +562,24 @@ func (r *MicroK8sConfigReconciler) MachineToBootstrapMapFunc(o client.Object) []
 		result = append(result, ctrl.Request{NamespacedName: name})
 	}
 	return result
+}
+
+func (r *MicroK8sConfigReconciler) getControlPlaneMachinesForCluster(ctx context.Context,
+	cluster client.ObjectKey) ([]clusterv1.Machine, error) {
+	selector := map[string]string{
+		clusterv1.ClusterLabelName:             cluster.Name,
+		clusterv1.MachineControlPlaneLabelName: "",
+	}
+
+	machineList := clusterv1.MachineList{}
+	if err := r.Client.List(
+		ctx,
+		&machineList,
+		client.InNamespace(cluster.Namespace),
+		client.MatchingLabels(selector),
+	); err != nil {
+		return nil, err
+	}
+
+	return machineList.Items, nil
 }

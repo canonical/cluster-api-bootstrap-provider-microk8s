@@ -113,7 +113,7 @@ runcmd:
 - sudo iptables -A PREROUTING -t nat  -p tcp --dport 6443 -j REDIRECT --to-port 16443
 - sudo apt-get update
 - sudo apt-get install iptables-persistent
-- sudo snap install microk8s --classic
+- sudo sh -c "while ! snap install microk8s --classic ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
 - sudo sed -i 's/19001/2380/' /var/tmp/port-update.yaml

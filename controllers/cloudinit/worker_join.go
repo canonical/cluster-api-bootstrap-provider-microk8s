@@ -25,11 +25,20 @@ import (
 const (
 	workerJoinCloudInit = `{{.Header}}
 runcmd:
+- sudo sh -c "while ! snap install microk8s --classic ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo snap install microk8s --classic
 - sudo microk8s status --wait-ready
-- sudo microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} --worker
+- sudo echo "Stopping"
+- sudo microk8s stop
+- sudo sleep 20
+- sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
+- sudo echo "Starting"
+- sudo microk8s start
 - sudo sleep 20
 - sudo microk8s status --wait-ready
+- sudo echo "Joining"
+- sudo echo "Will join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}"
+- sudo sh -c "while ! microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} --worker ; do sleep 10 ; echo 'Retry join'; done"
 `
 )
 
