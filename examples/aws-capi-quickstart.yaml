@@ -24,7 +24,7 @@ metadata:
   namespace: default
 spec:
   region: us-east-1
-  sshKeyName: default
+  sshKeyName: ad-hoc
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: MicroK8sControlPlane
@@ -41,7 +41,7 @@ spec:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: AWSMachineTemplate
       name: capi-aws-19072022-4-control-plane
-  replicas: 4
+  replicas: 3
   version: v1.23.0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
@@ -54,7 +54,7 @@ spec:
     spec:
       iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
       instanceType: t3.large
-      sshKeyName: default
+      sshKeyName: ad-hoc
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -63,7 +63,7 @@ metadata:
   namespace: default
 spec:
   clusterName: capi-aws-19072022-4
-  replicas: 0
+  replicas: 2
   selector:
     matchLabels: null
   template:
@@ -90,7 +90,7 @@ spec:
     spec:
       iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
       instanceType: t3.large
-      sshKeyName: default
+      sshKeyName: ad-hoc
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: MicroK8sConfigTemplate
