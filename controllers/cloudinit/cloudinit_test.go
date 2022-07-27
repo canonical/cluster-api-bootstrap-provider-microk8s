@@ -38,7 +38,7 @@ func TestNewInitControlPlaneCommands(t *testing.T) {
 
 	expectedCommands := []string{
 		`snap install microk8s --classic --channel=1.23`,
-		`--token my_join_token`,
+		`microk8s add-node --token-ttl 86400 --token my_join_token`,
 		`for a in  'foo'  'bar'`,
 	}
 
@@ -63,7 +63,7 @@ func TestNewJoinControlPlaneCommands(t *testing.T) {
 
 	expectedCommands := []string{
 		`snap install microk8s --classic --channel=1.24`,
-		`--token my_join_token`,
+		`microk8s add-node --token-ttl 86400 --token my_join_token`,
 		`microk8s join 1.2.3.4:25000`,
 	}
 
