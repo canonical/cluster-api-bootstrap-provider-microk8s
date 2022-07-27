@@ -20,250 +20,77 @@ import (
 	"testing"
 
 	. "github.com/onsi/gomega"
-	"k8s.io/utils/pointer"
-
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
-	"sigs.k8s.io/cluster-api/util/certs"
-	"sigs.k8s.io/cluster-api/util/secret"
 )
-
-func TestNewInitControlPlaneAdditionalFileEncodings(t *testing.T) {
-	g := NewWithT(t)
-
-	cpinput := &ControlPlaneInput{
-		BaseUserData: BaseUserData{
-			Header:              "test",
-			PreKubeadmCommands:  nil,
-			PostKubeadmCommands: nil,
-			AdditionalFiles: []bootstrapv1.File{
-				{
-					Path:     "/tmp/my-path",
-					Encoding: bootstrapv1.Base64,
-					Content:  "aGk=",
-				},
-				{
-					Path:    "/tmp/my-other-path",
-					Content: "hi",
-				},
-			},
-			WriteFiles: nil,
-			Users:      nil,
-			NTP:        nil,
-		},
-		Certificates:         secret.Certificates{},
-		ClusterConfiguration: "my-cluster-config",
-		InitConfiguration:    "my-init-config",
-	}
-
-	for _, certificate := range cpinput.Certificates {
-		certificate.KeyPair = &certs.KeyPair{
-			Cert: []byte("some certificate"),
-			Key:  []byte("some key"),
-		}
-	}
-
-	out, err := NewInitControlPlane(cpinput)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	expectedFiles := []string{
-		`-   path: /tmp/my-path
-    encoding: "base64"
-    content: |
-      aGk=`,
-		`-   path: /tmp/my-other-path
-    content: |
-      hi`,
-	}
-	for _, f := range expectedFiles {
-		g.Expect(out).To(ContainSubstring(f))
-	}
-}
 
 func TestNewInitControlPlaneCommands(t *testing.T) {
 	g := NewWithT(t)
 
+	addons := []string{"foo", "bar"}
 	cpinput := &ControlPlaneInput{
-		BaseUserData: BaseUserData{
-			Header:              "test",
-			PreKubeadmCommands:  []string{`"echo $(date) ': hello world!'"`},
-			PostKubeadmCommands: []string{"echo $(date) ': hello world!'"},
-			AdditionalFiles:     nil,
-			WriteFiles:          nil,
-			Users:               nil,
-			NTP:                 nil,
-		},
-		Certificates:         secret.Certificates{},
-		ClusterConfiguration: "my-cluster-config",
-		InitConfiguration:    "my-init-config",
-	}
-
-	for _, certificate := range cpinput.Certificates {
-		certificate.KeyPair = &certs.KeyPair{
-			Cert: []byte("some certificate"),
-			Key:  []byte("some key"),
-		}
+		ControlPlaneEndpoint: "lb-ep",
+		JoinToken:            "my_join_token",
+		Version:              "v1.23.3",
+		Addons:               addons,
 	}
 
 	out, err := NewInitControlPlane(cpinput)
 	g.Expect(err).NotTo(HaveOccurred())
 
 	expectedCommands := []string{
-		`"\"echo $(date) ': hello world!'\""`,
-		`"echo $(date) ': hello world!'"`,
+		`snap install microk8s --classic --channel=1.23`,
+		`microk8s add-node --token-ttl 86400 --token my_join_token`,
+		`for a in  'foo'  'bar'  'dns'`,
 	}
+
 	for _, f := range expectedCommands {
-		g.Expect(out).To(ContainSubstring(f))
+		g.Expect(string(out)).To(ContainSubstring(f))
 	}
 }
 
-func TestNewInitControlPlaneDiskMounts(t *testing.T) {
-	g := NewWithT(t)
-
-	cpinput := &ControlPlaneInput{
-		BaseUserData: BaseUserData{
-			Header:              "test",
-			PreKubeadmCommands:  nil,
-			PostKubeadmCommands: nil,
-			WriteFiles:          nil,
-			Users:               nil,
-			NTP:                 nil,
-			DiskSetup: &bootstrapv1.DiskSetup{
-				Partitions: []bootstrapv1.Partition{
-					{
-						Device:    "test-device",
-						Layout:    true,
-						Overwrite: pointer.BoolPtr(false),
-						TableType: pointer.StringPtr("gpt"),
-					},
-				},
-				Filesystems: []bootstrapv1.Filesystem{
-					{
-						Device:     "test-device",
-						Filesystem: "ext4",
-						Label:      "test_disk",
-						ExtraOpts:  []string{"-F", "-E", "lazy_itable_init=1,lazy_journal_init=1"},
-					},
-				},
-			},
-			Mounts: []bootstrapv1.MountPoints{
-				{"test_disk", "/var/lib/testdir"},
-			},
-		},
-		Certificates:         secret.Certificates{},
-		ClusterConfiguration: "my-cluster-config",
-		InitConfiguration:    "my-init-config",
-	}
-
-	out, err := NewInitControlPlane(cpinput)
-	g.Expect(err).NotTo(HaveOccurred())
-
-	expectedDiskSetup := `disk_setup:
-  test-device:
-    table_type: gpt
-    layout: true
-    overwrite: false`
-	expectedFSSetup := `fs_setup:
-  - label: test_disk
-    filesystem: ext4
-    device: test-device
-    extra_opts:
-      - -F
-      - -E
-      - lazy_itable_init=1,lazy_journal_init=1`
-	expectedMounts := `mounts:
-  - - test_disk
-    - /var/lib/testdir`
-
-	g.Expect(string(out)).To(ContainSubstring(expectedDiskSetup))
-	g.Expect(string(out)).To(ContainSubstring(expectedFSSetup))
-	g.Expect(string(out)).To(ContainSubstring(expectedMounts))
-}
-
-func TestNewJoinControlPlaneAdditionalFileEncodings(t *testing.T) {
+func TestNewJoinControlPlaneCommands(t *testing.T) {
 	g := NewWithT(t)
 
 	cpinput := &ControlPlaneJoinInput{
-		BaseUserData: BaseUserData{
-			Header:              "test",
-			PreKubeadmCommands:  nil,
-			PostKubeadmCommands: nil,
-			AdditionalFiles: []bootstrapv1.File{
-				{
-					Path:     "/tmp/my-path",
-					Encoding: bootstrapv1.Base64,
-					Content:  "aGk=",
-				},
-				{
-					Path:    "/tmp/my-other-path",
-					Content: "hi",
-				},
-			},
-			WriteFiles: nil,
-			Users:      nil,
-			NTP:        nil,
-		},
-		Certificates: secret.Certificates{},
-		JoinToken:    "my-bootstrap-token",
-	}
-
-	for _, certificate := range cpinput.Certificates {
-		certificate.KeyPair = &certs.KeyPair{
-			Cert: []byte("some certificate"),
-			Key:  []byte("some key"),
-		}
+		ControlPlaneEndpoint: "lb-ep",
+		JoinToken:            "my_join_token",
+		Version:              "v1.24.3",
+		IPOfNodeToJoin:       "1.2.3.4",
+		PortOfNodeToJoin:     "25000",
 	}
 
 	out, err := NewJoinControlPlane(cpinput)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	expectedFiles := []string{
-		`-   path: /tmp/my-path
-    encoding: "base64"
-    content: |
-      aGk=`,
-		`-   path: /tmp/my-other-path
-    content: |
-      hi`,
+	expectedCommands := []string{
+		`snap install microk8s --classic --channel=1.24`,
+		`microk8s add-node --token-ttl 86400 --token my_join_token`,
+		`microk8s join 1.2.3.4:25000`,
 	}
-	for _, f := range expectedFiles {
-		g.Expect(out).To(ContainSubstring(f))
+
+	for _, f := range expectedCommands {
+		g.Expect(string(out)).To(ContainSubstring(f))
 	}
 }
 
-func TestNewJoinControlPlaneExperimentalRetry(t *testing.T) {
+func TestNewJoinWorkerCommands(t *testing.T) {
 	g := NewWithT(t)
 
-	cpinput := &ControlPlaneJoinInput{
-		BaseUserData: BaseUserData{
-			Header:               "test",
-			PreKubeadmCommands:   nil,
-			PostKubeadmCommands:  nil,
-			UseExperimentalRetry: true,
-			WriteFiles:           nil,
-			Users:                nil,
-			NTP:                  nil,
-		},
-		Certificates: secret.Certificates{},
-		JoinToken:    "my-bootstrap-token",
+	cpinput := &WorkerJoinInput{
+		JoinToken:        "my_join_token",
+		Version:          "v1.27.3",
+		IPOfNodeToJoin:   "5.4.3.2",
+		PortOfNodeToJoin: "23000",
 	}
 
-	for _, certificate := range cpinput.Certificates {
-		certificate.KeyPair = &certs.KeyPair{
-			Cert: []byte("some certificate"),
-			Key:  []byte("some key"),
-		}
-	}
-
-	out, err := NewJoinControlPlane(cpinput)
+	out, err := NewJoinWorker(cpinput)
 	g.Expect(err).NotTo(HaveOccurred())
 
-	expectedFiles := []string{
-		`-   path: ` + retriableJoinScriptName + `
-    owner: ` + retriableJoinScriptOwner + `
-    permissions: '` + retriableJoinScriptPermissions + `'
-    `,
+	expectedCommands := []string{
+		`snap install microk8s --classic --channel=1.27`,
+		`microk8s join 5.4.3.2:23000/my_join_token --worker`,
 	}
-	for _, f := range expectedFiles {
-		g.Expect(out).To(ContainSubstring(f))
+
+	for _, f := range expectedCommands {
+		g.Expect(string(out)).To(ContainSubstring(f))
 	}
 }

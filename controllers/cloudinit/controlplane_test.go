@@ -52,3 +52,57 @@ func TestTemplateYAMLIndent(t *testing.T) {
 		})
 	}
 }
+
+func TestExtractVersionParts(t *testing.T) {
+	testcases := []struct {
+		version string
+		major   int
+		minor   int
+		fail    bool
+	}{
+		{
+			version: "v1.23.4",
+			major:   1,
+			minor:   23,
+			fail:    false,
+		},
+		{
+			version: "1.23.4",
+			major:   1,
+			minor:   23,
+			fail:    false,
+		},
+		{
+			version: "v1.23.4-alpha2",
+			major:   1,
+			minor:   23,
+			fail:    false,
+		},
+		{
+			version: "somewords",
+			major:   1,
+			minor:   23,
+			fail:    true,
+		},
+	}
+
+	for _, tc := range testcases {
+		major, minor, err := extractVersionParts(tc.version)
+		if tc.fail == false && err != nil {
+			t.Errorf("Unexpected failure in parsing %s", tc.version)
+			continue
+		}
+
+		if tc.fail == false && (major != tc.major || minor != tc.minor) {
+			t.Errorf("Failed to extract segments of %s, got %d and %d", tc.version, major, minor)
+			continue
+		}
+	}
+}
+
+func TestGenerateSnapChannelArgument(t *testing.T) {
+	arg := generateSnapChannelArgument(1, 23)
+	if arg != "--channel=1.23" {
+		t.Errorf("Failed to generate channel argument (produced %s)", arg)
+	}
+}

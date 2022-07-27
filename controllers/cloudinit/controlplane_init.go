@@ -17,7 +17,9 @@ limitations under the License.
 package cloudinit
 
 import (
+	"fmt"
 	"net"
+	"strings"
 
 	"sigs.k8s.io/cluster-api/util/secret"
 )
@@ -113,7 +115,7 @@ runcmd:
 - sudo iptables -A PREROUTING -t nat  -p tcp --dport 6443 -j REDIRECT --to-port 16443
 - sudo apt-get update
 - sudo apt-get install iptables-persistent
-- sudo snap install microk8s --classic
+- sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
 - sudo sed -i 's/19001/2380/' /var/tmp/port-update.yaml
@@ -126,7 +128,7 @@ runcmd:
 - sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
 - sudo microk8s status --wait-ready
 - sudo microk8s add-node --token-ttl 86400 --token {{.JoinToken}}
-- sudo microk8s enable dns
+- sudo sh -c "for a in {{.Addons}} ; do echo 'Enabling ' \$a ; microk8s enable \$a ; sleep 10; microk8s status --wait-ready ; done"
 - sudo sleep 15
 `
 )
@@ -140,6 +142,8 @@ type ControlPlaneInput struct {
 	JoinToken                string
 	ClusterConfiguration     string
 	InitConfiguration        string
+	Version                  string
+	Addons                   []string
 }
 
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
@@ -149,12 +153,39 @@ func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
 	input.SentinelFileCommand = sentinelFileCommand
 	input.ControlPlaneEndpointType = "DNS"
+	major, minor, err := extractVersionParts(input.Version)
+	if err != nil {
+		return nil, err
+	}
+	input.Version = generateSnapChannelArgument(major, minor)
+
+	// Get at least dns enabled
+	if input.Addons == nil {
+		input.Addons = []string{"dns"}
+	}
+	found := false
+	for _, addon := range input.Addons {
+		if strings.Contains(addon, "dns") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		input.Addons = append(input.Addons, "dns")
+	}
+
+	var addons_str string
+	for _, addon := range input.Addons {
+		addons_str += fmt.Sprintf(" '%s' ", addon)
+	}
+	cloudinit_str := strings.Replace(controlPlaneCloudInit, "{{.Addons}}", addons_str, -1)
+
 	addr := net.ParseIP(input.ControlPlaneEndpoint)
 	if addr != nil {
 		input.ControlPlaneEndpointType = "IP"
 	}
 
-	userData, err := generate("InitControlplane", controlPlaneCloudInit, input)
+	userData, err := generate("InitControlplane", cloudinit_str, input)
 	if err != nil {
 		return nil, err
 	}

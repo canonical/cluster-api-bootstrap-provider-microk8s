@@ -17,8 +17,11 @@ limitations under the License.
 package cloudinit
 
 import (
+	"fmt"
 	"strings"
 	"text/template"
+
+	version "github.com/hashicorp/go-version"
 )
 
 var (
@@ -31,4 +34,17 @@ func templateYAMLIndent(i int, input string) string {
 	split := strings.Split(input, "\n")
 	ident := "\n" + strings.Repeat(" ", i)
 	return strings.Repeat(" ", i) + strings.Join(split, ident)
+}
+
+func extractVersionParts(version_str string) (int, int, error) {
+	v, err := version.NewVersion(version_str)
+	if err != nil {
+		return 0, 0, err
+	}
+	segs := v.Segments()
+	return segs[0], segs[1], nil
+}
+
+func generateSnapChannelArgument(major int, minor int) string {
+	return fmt.Sprintf("--channel=%d.%d", major, minor)
 }

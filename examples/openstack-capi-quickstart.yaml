@@ -29,6 +29,7 @@ spec:
   #apiServerLoadBalancer:
   #  enabled: true
   managedSecurityGroups: true
+  allowAllInClusterTraffic: true
   nodeCidr: 10.6.0.0/24
   dnsNameservers: []
   externalNetworkId: 1a154612-1c48-48b8-9352-32d230dd9363
@@ -42,14 +43,17 @@ spec:
   controlPlaneConfig:
     controlplane:
       joinConfiguration:
-        connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
+        connectionToken: "aG91Y2ggL3Zhci90bXAvZm9v"
       initConfiguration:
+        addons:
+        - dns
+        - ingress
   machineTemplate:
     infrastructureTemplate:
       apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
       kind: OpenStackMachineTemplate
       name: capi-openstack-control-plane
-  replicas: 4
+  replicas: 1
   version: v1.23.0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1alpha5
@@ -116,4 +120,3 @@ spec:
     spec:
       joinConfiguration:
         connectionToken: "dG91Y2ggL3Zhci90bXAvZm9v"
-      initConfiguration:

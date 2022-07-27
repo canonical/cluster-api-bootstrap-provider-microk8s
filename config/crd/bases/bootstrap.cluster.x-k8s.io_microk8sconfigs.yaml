@@ -56,6 +56,10 @@ spec:
                 type: object
               initConfiguration:
                 properties:
+                  addons:
+                    items:
+                      type: string
+                    type: array
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this
                       representation of an object. Servers should convert recognized
