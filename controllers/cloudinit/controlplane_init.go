@@ -163,6 +163,17 @@ func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 	if input.Addons == nil {
 		input.Addons = []string{"dns"}
 	}
+	found := false
+	for _, addon := range input.Addons {
+		if strings.Contains(addon, "dns") {
+			found = true
+			break
+		}
+	}
+	if !found {
+		input.Addons = append(input.Addons, "dns")
+	}
+
 	var addons_str string
 	for _, addon := range input.Addons {
 		addons_str += fmt.Sprintf(" '%s' ", addon)

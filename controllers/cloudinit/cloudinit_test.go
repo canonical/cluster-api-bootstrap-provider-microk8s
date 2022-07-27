@@ -39,7 +39,7 @@ func TestNewInitControlPlaneCommands(t *testing.T) {
 	expectedCommands := []string{
 		`snap install microk8s --classic --channel=1.23`,
 		`microk8s add-node --token-ttl 86400 --token my_join_token`,
-		`for a in  'foo'  'bar'`,
+		`for a in  'foo'  'bar'  'dns'`,
 	}
 
 	for _, f := range expectedCommands {
