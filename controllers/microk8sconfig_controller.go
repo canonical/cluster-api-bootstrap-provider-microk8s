@@ -193,17 +193,8 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return r.handleClusterNotInitialized(ctx, scope)
 	}
 
-	// Every other case it's a join scenario
-	// Nb. in this case ClusterConfiguration and InitConfiguration should not be defined by users, but in case of misconfigurations, CABPK simply ignore them
-
 	// Unlock any locks that might have been set during init process
 	r.MicroK8sInitLock.Unlock(ctx, cluster)
-
-	// if the JoinConfiguration is missing, create a default one
-	if config.Spec.JoinConfiguration == nil {
-		log.Info("Creating default JoinConfiguration")
-		//	config.Spec.JoinConfiguration = &bootstrapv1.JoinConfiguration{}
-	}
 
 	// it's a control plane join or a worker node?
 	if configOwner.IsControlPlaneMachine() {
@@ -251,10 +242,22 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 
 	scope.Info("Creating BootstrapData for the init control plane")
 
+	microk8sConfig := &bootstrapclusterxk8siov1beta1.MicroK8sConfig{}
+	if err := r.Client.Get(ctx, client.ObjectKey{
+		Namespace: machine.Spec.Bootstrap.ConfigRef.Namespace,
+		Name:      machine.Spec.Bootstrap.ConfigRef.Name,
+	}, microk8sConfig); err != nil {
+		return ctrl.Result{}, err
+	}
+
 	controlPlaneInput := &cloudinit.ControlPlaneInput{
 		BaseUserData:         cloudinit.BaseUserData{},
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
 		JoinToken:            "abcdefgwijklmnopqrstuvwxyzABCDEF",
+		Version:              *machine.Spec.Version,
+	}
+	if microk8sConfig.Spec.InitConfiguration != nil && microk8sConfig.Spec.InitConfiguration.Addons != nil {
+		controlPlaneInput.Addons = microk8sConfig.Spec.InitConfiguration.Addons
 	}
 
 	bootstrapInitData, err := cloudinit.NewInitControlPlane(controlPlaneInput)
@@ -312,6 +315,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		JoinToken:            "abcdefgwijklmnopqrstuvwxyzABCDEF",
 		PortOfNodeToJoin:     microk8sConfig.Spec.JoinConfiguration.PortOfNodeToConnectTo,
 		IPOfNodeToJoin:       microk8sConfig.Spec.JoinConfiguration.IpOfNodeToConnectTo,
+		Version:              *machine.Spec.Version,
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinControlPlane(controlPlaneInput)
@@ -397,6 +401,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		JoinToken:        "abcdefgwijklmnopqrstuvwxyzABCDEF",
 		PortOfNodeToJoin: portOfNodeToConnectTo,
 		IPOfNodeToJoin:   ipOfNodeToConnectTo,
+		Version:          *machine.Spec.Version,
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)

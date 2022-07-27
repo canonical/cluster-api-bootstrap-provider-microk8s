@@ -91,6 +91,7 @@ type InitConfiguration struct {
 
 	// +optional
 	LocalAPIEndpoint APIEndpoint `json:"localAPIEndpoint,omitempty"`
+	Addons           []string    `json:"addons,omitempty"`
 }
 
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object

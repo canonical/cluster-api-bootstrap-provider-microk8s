@@ -25,8 +25,7 @@ import (
 const (
 	workerJoinCloudInit = `{{.Header}}
 runcmd:
-- sudo sh -c "while ! snap install microk8s --classic ; do sleep 10 ; echo 'Retry snap installation'; done"
-- sudo snap install microk8s --classic
+- sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
 - sudo echo "Stopping"
 - sudo microk8s stop
@@ -59,6 +58,12 @@ func NewJoinWorker(input *WorkerJoinInput) ([]byte, error) {
 	if err := input.prepare(); err != nil {
 		return nil, err
 	}
+	major, minor, err := extractVersionParts(input.Version)
+	if err != nil {
+		return nil, err
+	}
+	input.Version = generateSnapChannelArgument(major, minor)
+
 	userData, err := generate("JoinWorker", workerJoinCloudInit, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining as worker")
