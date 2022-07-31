@@ -17,9 +17,16 @@ limitations under the License.
 package controllers
 
 import (
+	"bytes"
 	"context"
+	"crypto/rand"
+	"crypto/rsa"
+	"crypto/x509"
+	"crypto/x509/pkix"
+	"encoding/pem"
 	"fmt"
-	"math/rand"
+	"math/big"
+	mrand "math/rand"
 	"time"
 
 	bootstrapclusterxk8siov1beta1 "github.com/canonical/cluster-api-bootstrap-provider-microk8s/apis/v1beta1"
@@ -258,8 +265,16 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
+	cert, key, err := r.getCA(ctx, scope)
+	if err != nil {
+		scope.Info("Failed to get or generate the CA, requeueing")
+		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
+	}
+
 	controlPlaneInput := &cloudinit.ControlPlaneInput{
 		BaseUserData:         cloudinit.BaseUserData{},
+		CACert:               *cert,
+		CAKey:                *key,
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
 		JoinToken:            token,
 		JoinTokenTTLInSecs:   microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
@@ -507,7 +522,7 @@ func (r *MicroK8sConfigReconciler) storeBootstrapData(ctx context.Context, scope
 }
 
 func (r *MicroK8sConfigReconciler) getJoinToken(ctx context.Context, scope *Scope) (string, error) {
-	// See if the kubeconfig exists. If not create it.
+	// See if the token exists. If not create it.
 	secrets := &corev1.SecretList{}
 	err := r.Client.List(ctx, secrets)
 	if err != nil {
@@ -525,7 +540,7 @@ func (r *MicroK8sConfigReconciler) getJoinToken(ctx context.Context, scope *Scop
 		const letters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ"
 		b := make([]byte, 32)
 		for i := range b {
-			b[i] = letters[rand.Intn(len(letters))]
+			b[i] = letters[mrand.Intn(len(letters))]
 		}
 		token := string(b)
 		tokenSecret := &corev1.Secret{
@@ -556,6 +571,109 @@ func (r *MicroK8sConfigReconciler) getJoinToken(ctx context.Context, scope *Scop
 	}
 
 	return string(readTokenSecret.Data["value"]), nil
+}
+
+func (r *MicroK8sConfigReconciler) getCA(ctx context.Context, scope *Scope) (cert *string, key *string, err error) {
+	// See if the CA cert exists. If not create it.
+	secrets := &corev1.SecretList{}
+	err = r.Client.List(ctx, secrets)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	found := false
+	for _, s := range secrets.Items {
+		if s.Name == scope.Cluster.Name+"-ca" {
+			found = true
+		}
+	}
+
+	if !found {
+		newcrt, newkey, err := r.generateCA()
+		if err != nil {
+			return nil, nil, err
+		}
+		caSecret := &corev1.Secret{
+			ObjectMeta: metav1.ObjectMeta{
+				Namespace: scope.Cluster.Namespace,
+				Name:      scope.Cluster.Name + "-ca",
+			},
+			Data: map[string][]byte{
+				"crt": []byte(*newcrt),
+				"key": []byte(*newkey),
+			},
+		}
+		err = r.Client.Create(ctx, caSecret)
+		if err != nil {
+			return nil, nil, err
+		}
+	}
+
+	readCASecret := &corev1.Secret{}
+	err = r.Client.Get(ctx,
+		types.NamespacedName{
+			Namespace: scope.Cluster.Namespace,
+			Name:      scope.Cluster.Name + "-ca",
+		},
+		readCASecret,
+	)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	certstr := string(readCASecret.Data["crt"])
+	keystr := string(readCASecret.Data["key"])
+	return &certstr, &keystr, nil
+}
+
+func (r *MicroK8sConfigReconciler) generateCA() (cert *string, key *string, err error) {
+	// set up our CA certificate
+	ca := &x509.Certificate{
+		SerialNumber: big.NewInt(2019),
+		Subject: pkix.Name{
+			Organization:  []string{"Canonical"},
+			Country:       []string{"GB"},
+			Province:      []string{""},
+			Locality:      []string{"Canonical"},
+			StreetAddress: []string{"Canonical"},
+			CommonName:    "10.152.183.1",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		IsCA:                  true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+	}
+
+	// create our private and public key
+	caPrivKey, err := rsa.GenerateKey(rand.Reader, 2048)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// create the CA
+	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	// pem encode
+	caPEM := new(bytes.Buffer)
+	pem.Encode(caPEM, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: caBytes,
+	})
+
+	caPrivKeyPEM := new(bytes.Buffer)
+	pem.Encode(caPrivKeyPEM, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
+	})
+
+	certstr := string(caPEM.Bytes())
+	keystr := string(caPrivKeyPEM.Bytes())
+	return &certstr, &keystr, nil
 }
 
 // SetupWithManager sets up the controller with the Manager.
