@@ -92,5 +92,5 @@ The two MicroK8s CAPI providers, the bootstrap and control plane, serve distinct
 
 ##### Interactions between controllers 
 ![Alt text]("Sequence diagram")
-<img src="./images/deployment_diagram.svg">
+<img src="./images/sequence_diagram.svg">
 
