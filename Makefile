@@ -1,8 +1,10 @@
 
 # Image URL to use all building/pushing image targets
-IMG ?= controller:latest
+IMG ?= cdkbot/capi-bootstrap-provider-microk8s:latest
 # ENVTEST_K8S_VERSION refers to the version of kubebuilder assets to be downloaded by envtest binary.
 ENVTEST_K8S_VERSION = 1.23
+# Components file to be used by clusterctl
+COMPSFILE=bootstrap-components.yaml
 
 # Get the currently used golang install path (in GOPATH/bin, unless GOBIN is set)
 ifeq (,$(shell go env GOBIN))
@@ -60,6 +62,12 @@ test: manifests generate fmt vet envtest ## Run tests.
 	KUBEBUILDER_ASSETS="$(shell $(ENVTEST) use $(ENVTEST_K8S_VERSION) -p path)" go test ./... -coverprofile cover.out
 
 ##@ Build
+
+.PHONY: component
+component: manifests kustomize ## Produce the bootstrap-components.yaml.
+	$(KUSTOMIZE) build config/crd/ > $(COMPSFILE)
+	echo "---" >> $(COMPSFILE)
+	$(KUSTOMIZE) build config/default/ >> $(COMPSFILE)
 
 .PHONY: build
 build: generate fmt vet ## Build manager binary.
