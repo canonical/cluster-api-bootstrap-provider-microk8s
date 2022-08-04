@@ -46,9 +46,9 @@ Alternatively, you can build the providers manually as described in the followin
 
 ### Building from source
 
-  * Install the cluster provider of your choice. Have a look at the [cluster API book](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers) for your options at this step. You should deploy only the infrastructure controller leaving the bootstrap and control plane ones empty. For example assuming we want to provision a MicroK8s cluster on OpenStack:
+  * Install the cluster provider of your choice. Have a look at the [cluster API book](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers) for your options at this step. You should deploy only the infrastructure controller leaving the bootstrap and control plane ones empty. For example assuming we want to provision a MicroK8s cluster on AWS:
 ```
-clusterctl init --infrastructure openstack --bootstrap "-" --control-plane "-"
+clusterctl init --infrastructure aws --bootstrap "-" --control-plane "-"
 ``` 
 
   * Clone the two cluster API MicroK8s specific repositories and start the controllers on two separate terminals:
@@ -140,7 +140,7 @@ The two MicroK8s CAPI providers, the bootstrap and control plane, serve distinct
 
 <img src="./images/deployment_diagram.svg">
 
-#### Interactions between controllers 
+#### Interactions among controllers 
 
 <img src="./images/sequence_diagram.svg">
 
