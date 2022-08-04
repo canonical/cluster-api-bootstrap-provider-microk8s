@@ -27,29 +27,10 @@ import (
 /*
 The following cloudinit includes a number of hacks we need to address as we move forward:
 
- - hardcoded CA under /var/tmp/
-A single CA is needed to run the cluster. We need to inject a predefined/known CA
-because we need to craft a kubeconfig file to access the cluster. If we were to use the CA
-MicroK8s creates during snap install we would not know what that CA would be and thus we would not
-be able to produce the kubeconfig file.
-Instead of having the CA hardcoded we should allow the user to point to an existing secret
-with the required cert/key. If the user does not point to a secret we should generate a CA inside the
-cluster-api-bootstrap provider and use that one.
-
  - redirect the API server port from 16443 to 6443
 By default MicroK8s sets the API server port to 16443. We should investigate two options here:
 1. See how we can configure the security groups of the infra providers to allow 16443.
 2. Get the API server port configured to 6443
-
- - cluster agent port (25000) and dqlite port (19001) set to use etcd ports (2379, 2380)
-The default ports of cluster agent and dqlite are blocked by security groups and as a temporary
-workaround we reuse the etcd ports that are open in the infra providers we are testing with.
-We have to find a way to get the security groups (setup by the infra providers) to allow custom ports.
-
- - Token for joining nodes
-We inject a token for joining nodes. At this point this token is hardcoded with a long TTL.
-To the very least we should make the TTL and tokens configurable. Ideally, there would be a mechanism
-to join a node without the need of such token.
 
  - This cloudinit (including the hacks) is somewhat duplicated for the joining nodes we should
 address this.
@@ -76,9 +57,9 @@ runcmd:
 - sudo apt-get update
 - sudo apt-get install iptables-persistent
 - sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
-- sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
+- sudo sed -i 's/25000/{{.PortOfClusterAgent}}/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
-- sudo sed -i 's/19001/2380/' /var/tmp/port-update.yaml
+- sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
 - sudo microk8s stop
 - sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
 - sudo microk8s start
@@ -104,6 +85,8 @@ type ControlPlaneInput struct {
 	JoinToken                string
 	JoinTokenTTLInSecs       int64
 	Version                  string
+	PortOfClusterAgent       string
+	PortOfDqlite             string
 	Addons                   []string
 }
 

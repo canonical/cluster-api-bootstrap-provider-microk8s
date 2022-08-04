@@ -39,9 +39,9 @@ runcmd:
 - sudo apt-get install iptables-persistent
 - sudo sh -c "while ! snap install microk8s --classic {{.Version}}; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
-- sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
+- sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
-- sudo sed -i 's/19001/2380/' /var/tmp/port-update.yaml
+- sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
 - sudo microk8s stop
 - sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
 - sudo microk8s start
@@ -66,6 +66,7 @@ type ControlPlaneJoinInput struct {
 	JoinTokenTTLInSecs       int64
 	IPOfNodeToJoin           string
 	PortOfNodeToJoin         string
+	PortOfDqlite             string
 	Version                  string
 }
 

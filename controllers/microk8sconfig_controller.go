@@ -83,6 +83,14 @@ type Scope struct {
 	Cluster     *clusterv1.Cluster
 }
 
+const (
+	defaultDqlitePort  string = "19000"
+	remappedDqlitePort string = "2380"
+
+	defaultClusterAgentPort  string = "25000"
+	remappedClusterAgentPort string = "179"
+)
+
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=microk8sconfigs,verbs=get;list;watch;create;update;patch;delete
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=microk8sconfigs/status,verbs=get;update;patch
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=microk8sconfigs/finalizers,verbs=update
@@ -271,6 +279,14 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
+	portOfClusterAgent := defaultClusterAgentPort
+	portOfDqlite := defaultDqlitePort
+	if microk8sConfig.Spec.ClusterConfiguration == nil ||
+		microk8sConfig.Spec.ClusterConfiguration.PortCompatibilityRemap {
+		portOfClusterAgent = remappedClusterAgentPort
+		portOfDqlite = remappedDqlitePort
+	}
+
 	controlPlaneInput := &cloudinit.ControlPlaneInput{
 		BaseUserData:         cloudinit.BaseUserData{},
 		CACert:               *cert,
@@ -279,6 +295,8 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		JoinToken:            token,
 		JoinTokenTTLInSecs:   microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
 		Version:              *machine.Spec.Version,
+		PortOfClusterAgent:   portOfClusterAgent,
+		PortOfDqlite:         portOfDqlite,
 	}
 	if microk8sConfig.Spec.InitConfiguration != nil && microk8sConfig.Spec.InitConfiguration.Addons != nil {
 		controlPlaneInput.Addons = microk8sConfig.Spec.InitConfiguration.Addons
@@ -335,15 +353,20 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	// TODO: Make this port configurable. Make sure you address the same issue in the controller provider
-	portOfNodeToConnectTo := "2379"
-
 	microk8sConfig := &bootstrapclusterxk8siov1beta1.MicroK8sConfig{}
 	if err := r.Client.Get(ctx, client.ObjectKey{
 		Namespace: machine.Spec.Bootstrap.ConfigRef.Namespace,
 		Name:      machine.Spec.Bootstrap.ConfigRef.Name,
 	}, microk8sConfig); err != nil {
 		return ctrl.Result{}, err
+	}
+
+	portOfNodeToConnectTo := defaultClusterAgentPort
+	portOfDqlite := defaultDqlitePort
+	if microk8sConfig.Spec.ClusterConfiguration == nil ||
+		microk8sConfig.Spec.ClusterConfiguration.PortCompatibilityRemap {
+		portOfNodeToConnectTo = remappedClusterAgentPort
+		portOfDqlite = remappedDqlitePort
 	}
 
 	token, err := r.getJoinToken(ctx, scope)
@@ -358,6 +381,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		JoinToken:            token,
 		JoinTokenTTLInSecs:   microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
 		PortOfNodeToJoin:     portOfNodeToConnectTo,
+		PortOfDqlite:         portOfDqlite,
 		IPOfNodeToJoin:       ipOfNodeToConnectTo,
 		Version:              *machine.Spec.Version,
 	}
@@ -416,8 +440,11 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		return ctrl.Result{}, err
 	}
 
-	// TODO: Make this port configurable. Make sure you address the same issue in the controller provider
-	portOfNodeToConnectTo := "2379"
+	portOfNodeToConnectTo := defaultClusterAgentPort
+	if microk8sConfig.Spec.ClusterConfiguration == nil ||
+		microk8sConfig.Spec.ClusterConfiguration.PortCompatibilityRemap {
+		portOfNodeToConnectTo = remappedClusterAgentPort
+	}
 
 	ipOfNodeToConnectTo, err := r.getControlPlaneNodeToJoin(ctx, scope)
 	if err != nil || ipOfNodeToConnectTo == "" {
@@ -432,11 +459,12 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 	}
 
 	workerInput := &cloudinit.WorkerJoinInput{
-		BaseUserData:     cloudinit.BaseUserData{},
-		JoinToken:        token,
-		PortOfNodeToJoin: portOfNodeToConnectTo,
-		IPOfNodeToJoin:   ipOfNodeToConnectTo,
-		Version:          *machine.Spec.Version,
+		BaseUserData:         cloudinit.BaseUserData{},
+		JoinToken:            token,
+		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
+		PortOfNodeToJoin:     portOfNodeToConnectTo,
+		IPOfNodeToJoin:       ipOfNodeToConnectTo,
+		Version:              *machine.Spec.Version,
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)

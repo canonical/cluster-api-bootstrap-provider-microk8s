@@ -33,7 +33,7 @@ runcmd:
 - sudo echo "Stopping"
 - sudo microk8s stop
 - sudo sleep 20
-- sudo sed -i 's/25000/2379/' /var/snap/microk8s/current/args/cluster-agent
+- sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
 - sudo echo "Starting"
 - sudo microk8s start
 - sudo sleep 20
@@ -41,6 +41,9 @@ runcmd:
 - sudo echo "Joining"
 - sudo echo "Will join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}"
 - sudo sh -c "while ! microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} --worker ; do sleep 10 ; echo 'Retry join'; done"
+- sudo  sed -i '/.*address:.*/d' /var/snap/microk8s/current/args/traefik/provider.yaml
+- |
+  sudo echo "        - address: {{.ControlPlaneEndpoint}}:6443" >> /var/snap/microk8s/current/args/traefik/provider.yaml
 `
 )
 
@@ -48,10 +51,11 @@ runcmd:
 type WorkerJoinInput struct {
 	BaseUserData
 	secret.Certificates
-	JoinToken        string
-	IPOfNodeToJoin   string
-	PortOfNodeToJoin string
-	Version          string
+	JoinToken            string
+	IPOfNodeToJoin       string
+	PortOfNodeToJoin     string
+	Version              string
+	ControlPlaneEndpoint string
 }
 
 // NewJoinWorker returns the user data string to be used on a new worker instance.

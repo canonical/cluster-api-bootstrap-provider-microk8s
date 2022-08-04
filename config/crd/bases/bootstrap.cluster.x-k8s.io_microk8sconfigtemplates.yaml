@@ -62,6 +62,11 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
+                          portCompatibilityRemap:
+                            default: true
+                            description: Remap MicroK8s ports and use those opened
+                              for kubeadm
+                            type: boolean
                         type: object
                       initConfiguration:
                         properties:

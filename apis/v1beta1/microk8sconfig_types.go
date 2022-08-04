@@ -33,6 +33,15 @@ import (
 // ClusterConfiguration contains cluster-wide configuration for a kubeadm cluster.
 type ClusterConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
+
+	// cluster agent port (25000) and dqlite port (19001) set to use calico port 179 and etcd port 2380 respectively
+	// The default ports of cluster agent and dqlite are blocked by security groups and as a temporary
+	// workaround we reuse the etcd ports that are open in the infra providers we are testing with.
+
+	// Remap MicroK8s ports and use those opened for kubeadm
+	// +kubebuilder:default:=true
+	// +optional
+	PortCompatibilityRemap bool `json:"portCompatibilityRemap,omitempty"`
 }
 
 type APIEndpoint struct {

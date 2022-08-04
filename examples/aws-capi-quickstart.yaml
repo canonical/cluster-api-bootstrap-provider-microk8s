@@ -1,26 +1,22 @@
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
 metadata:
-  name: capi-aws-19072022-4
+  name: capi-aws
   namespace: default
 spec:
-  # clusterNetwork:
-  #   pods:
-  #     cidrBlocks: ["192.168.0.0/16"] # CIDR block used by Calico.
-  #   serviceDomain: "cluster.local"
   controlPlaneRef:
     apiVersion: controlplane.cluster.x-k8s.io/v1beta1
     kind: MicroK8sControlPlane
-    name: capi-aws-19072022-4-control-plane
+    name: capi-aws-control-plane
   infrastructureRef:
     apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
     kind: AWSCluster
-    name: capi-aws-19072022-4
+    name: capi-aws
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSCluster
 metadata:
-  name: capi-aws-19072022-4
+  name: capi-aws
   namespace: default
 spec:
   region: us-east-1
@@ -29,7 +25,7 @@ spec:
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: MicroK8sControlPlane
 metadata:
-  name: capi-aws-19072022-4-control-plane
+  name: capi-aws-control-plane
   namespace: default
 spec:
   controlPlaneConfig:
@@ -42,62 +38,64 @@ spec:
     infrastructureTemplate:
       apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
       kind: AWSMachineTemplate
-      name: capi-aws-19072022-4-control-plane
+      name: capi-aws-control-plane
   replicas: 3
   version: v1.23.0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
-  name: capi-aws-19072022-4-control-plane
+  name: capi-aws-control-plane
   namespace: default
 spec:
   template:
     spec:
       iamInstanceProfile: control-plane.cluster-api-provider-aws.sigs.k8s.io
       instanceType: t3.large
+      # publicIP: True
       sshKeyName: ad-hoc
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
 metadata:
-  name: capi-aws-19072022-4-md-0
+  name: capi-aws-md-0
   namespace: default
 spec:
-  clusterName: capi-aws-19072022-4
+  clusterName: capi-aws
   replicas: 2
   selector:
     matchLabels: null
   template:
     spec:
-      clusterName: capi-aws-19072022-4
+      clusterName: capi-aws
       version: v1.23.0     
       bootstrap:
         configRef:
           apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
           kind: MicroK8sConfigTemplate
-          name: capi-aws-19072022-4-md-0
+          name: capi-aws-md-0
       infrastructureRef:
         apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
         kind: AWSMachineTemplate
-        name: capi-aws-19072022-4-md-0
+        name: capi-aws-md-0
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate
 metadata:
-  name: capi-aws-19072022-4-md-0
+  name: capi-aws-md-0
   namespace: default
 spec:
   template:
     spec:
       iamInstanceProfile: nodes.cluster-api-provider-aws.sigs.k8s.io
       instanceType: t3.large
+      # publicIP: True
       sshKeyName: ad-hoc
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: MicroK8sConfigTemplate
 metadata:
-  name: capi-aws-19072022-4-md-0
+  name: capi-aws-md-0
   namespace: default
 spec:
   template:
