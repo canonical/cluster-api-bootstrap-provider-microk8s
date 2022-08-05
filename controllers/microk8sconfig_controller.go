@@ -84,7 +84,7 @@ type Scope struct {
 }
 
 const (
-	defaultDqlitePort  string = "19000"
+	defaultDqlitePort  string = "19001"
 	remappedDqlitePort string = "2380"
 
 	defaultClusterAgentPort  string = "25000"

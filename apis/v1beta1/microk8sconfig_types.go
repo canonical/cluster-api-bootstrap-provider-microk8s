@@ -36,9 +36,10 @@ type ClusterConfiguration struct {
 
 	// cluster agent port (25000) and dqlite port (19001) set to use calico port 179 and etcd port 2380 respectively
 	// The default ports of cluster agent and dqlite are blocked by security groups and as a temporary
-	// workaround we reuse the etcd ports that are open in the infra providers we are testing with.
+	// workaround we reuse the etcd and calico ports that are open in the infra providers because kubeadm uses those.
 
-	// Remap MicroK8s ports and use those opened for kubeadm
+	// PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001)
+	// to 179 and 2380. The default ports are blocked via security groups in several infra providers.
 	// +kubebuilder:default:=true
 	// +optional
 	PortCompatibilityRemap bool `json:"portCompatibilityRemap,omitempty"`
