@@ -18,8 +18,6 @@ package cloudinit
 
 import (
 	"github.com/pkg/errors"
-
-	"sigs.k8s.io/cluster-api/util/secret"
 )
 
 const (
@@ -50,7 +48,6 @@ runcmd:
 // WorkerJoinInput defines context to generate instance user data for worker nodes to join.
 type WorkerJoinInput struct {
 	BaseUserData
-	secret.Certificates
 	JoinToken            string
 	IPOfNodeToJoin       string
 	PortOfNodeToJoin     string
@@ -60,11 +57,7 @@ type WorkerJoinInput struct {
 
 // NewJoinWorker returns the user data string to be used on a new worker instance.
 func NewJoinWorker(input *WorkerJoinInput) ([]byte, error) {
-	input.WriteFiles = input.Certificates.AsFiles()
-	input.ControlPlane = false
-	if err := input.prepare(); err != nil {
-		return nil, err
-	}
+	input.Header = cloudConfigHeader
 	major, minor, err := extractVersionParts(input.Version)
 	if err != nil {
 		return nil, err

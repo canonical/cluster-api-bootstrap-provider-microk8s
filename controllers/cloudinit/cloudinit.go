@@ -19,60 +19,24 @@ package cloudinit
 import (
 	"bytes"
 	_ "embed"
-	"fmt"
 	"text/template"
 
 	"github.com/pkg/errors"
-
-	bootstrapv1 "sigs.k8s.io/cluster-api/bootstrap/kubeadm/api/v1beta1"
 )
 
 const (
-	standardJoinCommand = "kubeadm join --config /run/kubeadm/kubeadm-join-config.yaml %s"
-	// sentinelFileCommand writes a file to /run/cluster-api to signal successful Kubernetes bootstrapping in a way that
-	// works both for Linux and Windows OS.
-	sentinelFileCommand            = "echo success > /run/cluster-api/bootstrap-success.complete"
-	retriableJoinScriptName        = "/usr/local/bin/kubeadm-bootstrap-script"
-	retriableJoinScriptOwner       = "root"
-	retriableJoinScriptPermissions = "0755"
-	cloudConfigHeader              = `## template: jinja
+	cloudConfigHeader = `## template: jinja
 #cloud-config
 `
 )
 
 // BaseUserData is shared across all the various types of files written to disk.
 type BaseUserData struct {
-	Header               string
-	AdditionalFiles      []bootstrapv1.File
-	WriteFiles           []bootstrapv1.File
-	ControlPlane         bool
-	UseExperimentalRetry bool
-	KubeadmCommand       string
-	KubeadmVerbosity     string
-	SentinelFileCommand  string
-}
-
-func (input *BaseUserData) prepare() error {
-	input.Header = cloudConfigHeader
-	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
-	input.KubeadmCommand = fmt.Sprintf(standardJoinCommand, input.KubeadmVerbosity)
-	if input.UseExperimentalRetry {
-		input.KubeadmCommand = retriableJoinScriptName
-		joinScriptFile, err := generateBootstrapScript(input)
-		if err != nil {
-			return errors.Wrap(err, "failed to generate user data for machine joining control plane")
-		}
-		input.WriteFiles = append(input.WriteFiles, *joinScriptFile)
-	}
-	input.SentinelFileCommand = sentinelFileCommand
-	return nil
+	Header string
 }
 
 func generate(kind string, tpl string, data interface{}) ([]byte, error) {
 	tm := template.New(kind).Funcs(defaultTemplateFuncMap)
-	if _, err := tm.Parse(filesTemplate); err != nil {
-		return nil, errors.Wrap(err, "failed to parse files template")
-	}
 
 	t, err := tm.Parse(tpl)
 	if err != nil {
@@ -85,22 +49,4 @@ func generate(kind string, tpl string, data interface{}) ([]byte, error) {
 	}
 
 	return out.Bytes(), nil
-}
-
-var (
-	//go:embed kubeadm-bootstrap-script.sh
-	kubeadmBootstrapScript string
-)
-
-func generateBootstrapScript(input interface{}) (*bootstrapv1.File, error) {
-	joinScript, err := generate("JoinScript", kubeadmBootstrapScript, input)
-	if err != nil {
-		return nil, errors.Wrap(err, "failed to bootstrap script for machine joins")
-	}
-	return &bootstrapv1.File{
-		Path:        retriableJoinScriptName,
-		Owner:       retriableJoinScriptOwner,
-		Permissions: retriableJoinScriptPermissions,
-		Content:     string(joinScript),
-	}, nil
 }

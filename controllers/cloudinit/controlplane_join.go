@@ -20,8 +20,6 @@ import (
 	"net"
 
 	"github.com/pkg/errors"
-
-	"sigs.k8s.io/cluster-api/util/secret"
 )
 
 const (
@@ -59,7 +57,6 @@ runcmd:
 // ControlPlaneJoinInput defines context to generate controlplane instance user data for control plane node join.
 type ControlPlaneJoinInput struct {
 	BaseUserData
-	secret.Certificates
 	ControlPlaneEndpoint     string
 	ControlPlaneEndpointType string
 	JoinToken                string
@@ -72,12 +69,7 @@ type ControlPlaneJoinInput struct {
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
 func NewJoinControlPlane(input *ControlPlaneJoinInput) ([]byte, error) {
-	// TODO: Consider validating that the correct certificates exist. It is different for external/stacked etcd
-	input.WriteFiles = input.Certificates.AsFiles()
-	input.ControlPlane = true
-	if err := input.prepare(); err != nil {
-		return nil, err
-	}
+	input.Header = cloudConfigHeader
 	major, minor, err := extractVersionParts(input.Version)
 	if err != nil {
 		return nil, err

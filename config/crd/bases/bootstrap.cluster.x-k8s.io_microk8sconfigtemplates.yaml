@@ -64,8 +64,10 @@ spec:
                             type: string
                           portCompatibilityRemap:
                             default: true
-                            description: Remap MicroK8s ports and use those opened
-                              for kubeadm
+                            description: PortCompatibilityRemap switches the default
+                              ports used by cluster agent (25000) and dqlite (19001)
+                              to 179 and 2380. The default ports are blocked via security
+                              groups in several infra providers.
                             type: boolean
                         type: object
                       initConfiguration:

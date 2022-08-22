@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-
-	"sigs.k8s.io/cluster-api/util/secret"
 )
 
 /*
@@ -77,7 +75,6 @@ runcmd:
 // ControlPlaneInput defines the context to generate a controlplane instance user data.
 type ControlPlaneInput struct {
 	BaseUserData
-	secret.Certificates
 	CACert                   string
 	CAKey                    string
 	ControlPlaneEndpoint     string
@@ -93,9 +90,6 @@ type ControlPlaneInput struct {
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
 func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 	input.Header = cloudConfigHeader
-	input.WriteFiles = input.Certificates.AsFiles()
-	input.WriteFiles = append(input.WriteFiles, input.AdditionalFiles...)
-	input.SentinelFileCommand = sentinelFileCommand
 	input.ControlPlaneEndpointType = "DNS"
 	major, minor, err := extractVersionParts(input.Version)
 	if err != nil {
