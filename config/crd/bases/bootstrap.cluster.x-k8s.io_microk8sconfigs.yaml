@@ -71,6 +71,12 @@ spec:
                       schemas to the latest internal value, and may reject unrecognized
                       values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
                     type: string
+                  httpProxy:
+                    description: The optional http proxy configuration
+                    type: string
+                  httpsProxy:
+                    description: The optional https proxy configuration
+                    type: string
                   joinTokenTTLInSecs:
                     default: 315569260
                     description: The join token will expire after the specified seconds,
@@ -97,6 +103,9 @@ spec:
                     - host
                     - port
                     type: object
+                  noProxy:
+                    description: The optional no proxy configuration
+                    type: string
                 type: object
             type: object
           status:

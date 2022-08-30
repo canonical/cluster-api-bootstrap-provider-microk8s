@@ -81,6 +81,18 @@ type InitConfiguration struct {
 	// +kubebuilder:validation:Minimum:=1
 	JoinTokenTTLInSecs int64 `json:"joinTokenTTLInSecs,omitempty"`
 
+	// The optional https proxy configuration
+	// +optional
+	HttpsProxy string `json:"httpsProxy,omitempty"`
+
+	// The optional http proxy configuration
+	// +optional
+	HttpProxy string `json:"httpProxy,omitempty"`
+
+	// The optional no proxy configuration
+	// +optional
+	NoProxy string `json:"noProxy,omitempty"`
+
 	// List of addons to be enabled upon cluster creation
 	// +optional
 	Addons []string `json:"addons,omitempty"`
