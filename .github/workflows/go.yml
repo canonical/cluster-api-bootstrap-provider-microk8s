@@ -24,6 +24,9 @@ jobs:
       - name: go vet
         run: make vet
 
+      - name: golangci-lint
+        run: make lint
+
   tests:
     name: Tests
     runs-on: ubuntu-latest

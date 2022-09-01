@@ -705,19 +705,25 @@ func (r *MicroK8sConfigReconciler) generateCA() (cert *string, key *string, err 
 
 	// pem encode
 	caPEM := new(bytes.Buffer)
-	pem.Encode(caPEM, &pem.Block{
+	err = pem.Encode(caPEM, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 
 	caPrivKeyPEM := new(bytes.Buffer)
-	pem.Encode(caPrivKeyPEM, &pem.Block{
+	err = pem.Encode(caPrivKeyPEM, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(caPrivKey),
 	})
+	if err != nil {
+		return nil, nil, err
+	}
 
-	certstr := string(caPEM.Bytes())
-	keystr := string(caPrivKeyPEM.Bytes())
+	certstr := caPEM.String()
+	keystr := caPrivKeyPEM.String()
 	return &certstr, &keystr, nil
 }
 
