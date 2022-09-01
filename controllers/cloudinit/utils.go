@@ -17,6 +17,7 @@ limitations under the License.
 package cloudinit
 
 import (
+	"bytes"
 	"fmt"
 	"strings"
 	"text/template"
@@ -47,4 +48,31 @@ func extractVersionParts(version_str string) (int, int, error) {
 
 func generateSnapChannelArgument(major int, minor int) string {
 	return fmt.Sprintf("--channel=%d.%d", major, minor)
+}
+
+func generateProxyCommands(https *string, http *string, noproxy *string) string {
+	var proxyCommands bytes.Buffer
+	if https != nil {
+		var cmd = fmt.Sprintf(
+			"- sudo sh -c \"echo HTTPS_PROXY=%s >> /var/snap/microk8s/current/args/containerd-env\"",
+			*https)
+		proxyCommands.WriteString(cmd)
+	}
+	if http != nil {
+		var cmd = fmt.Sprintf(
+			"- sudo sh -c \"echo HTTP_PROXY=%s >> /var/snap/microk8s/current/args/containerd-env\"",
+			*http)
+		proxyCommands.WriteString(cmd)
+	}
+	if noproxy != nil {
+		var cmd = fmt.Sprintf(
+			"- sudo sh -c \"echo NO_PROXY=%s >> /var/snap/microk8s/current/args/containerd-env\"",
+			*noproxy)
+		proxyCommands.WriteString(cmd)
+	}
+	if proxyCommands.Len() == 0 {
+		proxyCommands.WriteString("- sudo echo \"No proxy settings specified\"")
+	}
+
+	return proxyCommands.String()
 }

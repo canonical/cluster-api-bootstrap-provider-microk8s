@@ -18,6 +18,7 @@ package cloudinit
 
 import (
 	"net"
+	"strings"
 
 	"github.com/pkg/errors"
 
@@ -43,6 +44,7 @@ runcmd:
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
 - sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
 - sudo microk8s stop
+{{.ProxySection}}
 - sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
 - sudo microk8s start
 - sudo microk8s status --wait-ready
@@ -68,6 +70,9 @@ type ControlPlaneJoinInput struct {
 	PortOfNodeToJoin         string
 	PortOfDqlite             string
 	Version                  string
+	HttpsProxy               *string
+	HttpProxy                *string
+	NoProxy                  *string
 }
 
 // NewJoinControlPlane returns the user data string to be used on a new control plane instance.
@@ -89,7 +94,11 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) ([]byte, error) {
 	if addr != nil {
 		input.ControlPlaneEndpointType = "IP"
 	}
-	userData, err := generate("JoinControlplane", controlPlaneJoinCloudInit, input)
+
+	proxyCommands := generateProxyCommands(input.HttpsProxy, input.HttpProxy, input.NoProxy)
+	cloudinit_str := strings.Replace(controlPlaneJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
+
+	userData, err := generate("JoinControlplane", cloudinit_str, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")
 	}

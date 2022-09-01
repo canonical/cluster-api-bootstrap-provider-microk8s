@@ -70,6 +70,21 @@ func (in *InitConfiguration) DeepCopyInto(out *InitConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	out.LocalAPIEndpoint = in.LocalAPIEndpoint
+	if in.HttpsProxy != nil {
+		in, out := &in.HttpsProxy, &out.HttpsProxy
+		*out = new(string)
+		**out = **in
+	}
+	if in.HttpProxy != nil {
+		in, out := &in.HttpProxy, &out.HttpProxy
+		*out = new(string)
+		**out = **in
+	}
+	if in.NoProxy != nil {
+		in, out := &in.NoProxy, &out.NoProxy
+		*out = new(string)
+		**out = **in
+	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = make([]string, len(*in))

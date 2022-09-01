@@ -83,15 +83,15 @@ type InitConfiguration struct {
 
 	// The optional https proxy configuration
 	// +optional
-	HttpsProxy string `json:"httpsProxy,omitempty"`
+	HttpsProxy *string `json:"httpsProxy,omitempty"`
 
 	// The optional http proxy configuration
 	// +optional
-	HttpProxy string `json:"httpProxy,omitempty"`
+	HttpProxy *string `json:"httpProxy,omitempty"`
 
 	// The optional no proxy configuration
 	// +optional
-	NoProxy string `json:"noProxy,omitempty"`
+	NoProxy *string `json:"noProxy,omitempty"`
 
 	// List of addons to be enabled upon cluster creation
 	// +optional

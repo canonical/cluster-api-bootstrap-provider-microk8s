@@ -17,6 +17,8 @@ limitations under the License.
 package cloudinit
 
 import (
+	"strings"
+
 	"github.com/pkg/errors"
 
 	"sigs.k8s.io/cluster-api/util/secret"
@@ -33,6 +35,7 @@ runcmd:
 - sudo echo "Stopping"
 - sudo microk8s stop
 - sudo sleep 20
+{{.ProxySection}}
 - sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
 - sudo echo "Starting"
 - sudo microk8s start
@@ -56,6 +59,9 @@ type WorkerJoinInput struct {
 	PortOfNodeToJoin     string
 	Version              string
 	ControlPlaneEndpoint string
+	HttpsProxy           *string
+	HttpProxy            *string
+	NoProxy              *string
 }
 
 // NewJoinWorker returns the user data string to be used on a new worker instance.
@@ -71,7 +77,10 @@ func NewJoinWorker(input *WorkerJoinInput) ([]byte, error) {
 	}
 	input.Version = generateSnapChannelArgument(major, minor)
 
-	userData, err := generate("JoinWorker", workerJoinCloudInit, input)
+	proxyCommands := generateProxyCommands(input.HttpsProxy, input.HttpProxy, input.NoProxy)
+	cloudinit_str := strings.Replace(workerJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
+
+	userData, err := generate("JoinWorker", cloudinit_str, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining as worker")
 	}

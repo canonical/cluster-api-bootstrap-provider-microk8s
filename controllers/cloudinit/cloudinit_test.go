@@ -41,11 +41,32 @@ func TestNewInitControlPlaneCommands(t *testing.T) {
 		`snap install microk8s --classic --channel=1.23`,
 		`microk8s add-node --token-ttl 56789 --token my_join_token`,
 		`for a in  'foo'  'bar'  'dns'`,
+		`sudo echo "No proxy settings specified"`,
 	}
 
+	a := string(out)
 	for _, f := range expectedCommands {
-		g.Expect(string(out)).To(ContainSubstring(f))
+		g.Expect(a).To(ContainSubstring(f))
 	}
+
+	http := "http://proxy"
+	cpinputproxy := &ControlPlaneInput{
+		Version:   "v1.23.3",
+		HttpProxy: &http,
+	}
+
+	out, err = NewInitControlPlane(cpinputproxy)
+	g.Expect(err).NotTo(HaveOccurred())
+
+	expectedCommands = []string{
+		`HTTP_PROXY=http://proxy`,
+	}
+
+	a = string(out)
+	for _, f := range expectedCommands {
+		g.Expect(a).To(ContainSubstring(f))
+	}
+
 }
 
 func TestNewJoinControlPlaneCommands(t *testing.T) {

@@ -61,6 +61,7 @@ runcmd:
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
 - sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
 - sudo microk8s stop
+{{.ProxySection}}
 - sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
 - sudo microk8s start
 - sudo microk8s status --wait-ready
@@ -87,6 +88,9 @@ type ControlPlaneInput struct {
 	Version                  string
 	PortOfClusterAgent       string
 	PortOfDqlite             string
+	HttpsProxy               *string
+	HttpProxy                *string
+	NoProxy                  *string
 	Addons                   []string
 }
 
@@ -123,6 +127,9 @@ func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 		addons_str += fmt.Sprintf(" '%s' ", addon)
 	}
 	cloudinit_str := strings.Replace(controlPlaneCloudInit, "{{.Addons}}", addons_str, -1)
+
+	proxyCommands := generateProxyCommands(input.HttpsProxy, input.HttpProxy, input.NoProxy)
+	cloudinit_str = strings.Replace(cloudinit_str, "{{.ProxySection}}", proxyCommands, -1)
 
 	addr := net.ParseIP(input.ControlPlaneEndpoint)
 	if addr != nil {

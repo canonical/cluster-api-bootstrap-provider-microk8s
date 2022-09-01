@@ -298,12 +298,18 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		PortOfClusterAgent:   portOfClusterAgent,
 		PortOfDqlite:         portOfDqlite,
 	}
-	if microk8sConfig.Spec.InitConfiguration != nil && microk8sConfig.Spec.InitConfiguration.Addons != nil {
-		controlPlaneInput.Addons = microk8sConfig.Spec.InitConfiguration.Addons
-	}
-	if microk8sConfig.Spec.InitConfiguration != nil && microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
-		// set by default to 10 years
-		controlPlaneInput.JoinTokenTTLInSecs = 315569260
+	if microk8sConfig.Spec.InitConfiguration != nil {
+		if microk8sConfig.Spec.InitConfiguration.Addons != nil {
+			controlPlaneInput.Addons = microk8sConfig.Spec.InitConfiguration.Addons
+		}
+		controlPlaneInput.HttpsProxy = microk8sConfig.Spec.InitConfiguration.HttpsProxy
+		controlPlaneInput.HttpProxy = microk8sConfig.Spec.InitConfiguration.HttpProxy
+		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
+
+		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
+			// set by default to 10 years
+			controlPlaneInput.JoinTokenTTLInSecs = 315569260
+		}
 	}
 
 	bootstrapInitData, err := cloudinit.NewInitControlPlane(controlPlaneInput)
@@ -385,9 +391,14 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		IPOfNodeToJoin:       ipOfNodeToConnectTo,
 		Version:              *machine.Spec.Version,
 	}
-	if microk8sConfig.Spec.InitConfiguration != nil && microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
-		// set by default to 10 years
-		controlPlaneInput.JoinTokenTTLInSecs = 315569260
+	if microk8sConfig.Spec.InitConfiguration != nil {
+		controlPlaneInput.HttpsProxy = microk8sConfig.Spec.InitConfiguration.HttpsProxy
+		controlPlaneInput.HttpProxy = microk8sConfig.Spec.InitConfiguration.HttpProxy
+		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
+		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
+			// set by default to 10 years
+			controlPlaneInput.JoinTokenTTLInSecs = 315569260
+		}
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinControlPlane(controlPlaneInput)
@@ -465,6 +476,12 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		PortOfNodeToJoin:     portOfNodeToConnectTo,
 		IPOfNodeToJoin:       ipOfNodeToConnectTo,
 		Version:              *machine.Spec.Version,
+	}
+
+	if microk8sConfig.Spec.InitConfiguration != nil {
+		workerInput.HttpsProxy = microk8sConfig.Spec.InitConfiguration.HttpsProxy
+		workerInput.HttpProxy = microk8sConfig.Spec.InitConfiguration.HttpProxy
+		workerInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
 	}
 
 	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)
