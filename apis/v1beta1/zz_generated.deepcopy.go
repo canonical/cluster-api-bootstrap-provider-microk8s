@@ -70,13 +70,13 @@ func (in *InitConfiguration) DeepCopyInto(out *InitConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
 	out.LocalAPIEndpoint = in.LocalAPIEndpoint
-	if in.HttpsProxy != nil {
-		in, out := &in.HttpsProxy, &out.HttpsProxy
+	if in.HTTPSProxy != nil {
+		in, out := &in.HTTPSProxy, &out.HTTPSProxy
 		*out = new(string)
 		**out = **in
 	}
-	if in.HttpProxy != nil {
-		in, out := &in.HttpProxy, &out.HttpProxy
+	if in.HTTPProxy != nil {
+		in, out := &in.HTTPProxy, &out.HTTPProxy
 		*out = new(string)
 		**out = **in
 	}

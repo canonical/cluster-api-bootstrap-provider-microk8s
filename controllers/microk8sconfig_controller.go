@@ -132,7 +132,7 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	cluster, err := util.GetClusterByName(ctx, r.Client, configOwner.GetNamespace(), configOwner.ClusterName())
 	if err != nil {
-		if errors.Cause(err) == util.ErrNoCluster {
+		if errors.Is(err, util.ErrNoCluster) {
 			log.Info(fmt.Sprintf("%s does not belong to a cluster yet, waiting until it's part of a cluster", configOwner.GetKind()))
 			return ctrl.Result{}, nil
 		}
@@ -165,7 +165,6 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 
 	// Attempt to Patch the KubeadmConfig object and status after each reconciliation if no error occurs.
 	defer func() {
-
 		conditions.SetSummary(config,
 			conditions.WithConditions(
 				bootstrapclusterxk8siov1beta1.DataSecretAvailableCondition,
@@ -217,10 +216,10 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 	if configOwner.IsControlPlaneMachine() {
 		log.Info("Reconciling control plane")
 		return r.handleJoiningControlPlaneNode(ctx, scope)
-	} else {
-		log.Info("Reconciling worker")
-		return r.handleJoiningWorkerNode(ctx, scope)
 	}
+
+	log.Info("Reconciling worker")
+	return r.handleJoiningWorkerNode(ctx, scope)
 }
 
 func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Context, scope *Scope) (_ ctrl.Result, reterr error) {
@@ -302,8 +301,8 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		if microk8sConfig.Spec.InitConfiguration.Addons != nil {
 			controlPlaneInput.Addons = microk8sConfig.Spec.InitConfiguration.Addons
 		}
-		controlPlaneInput.HttpsProxy = microk8sConfig.Spec.InitConfiguration.HttpsProxy
-		controlPlaneInput.HttpProxy = microk8sConfig.Spec.InitConfiguration.HttpProxy
+		controlPlaneInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
+		controlPlaneInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
 		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
 
 		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
@@ -392,8 +391,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		Version:              *machine.Spec.Version,
 	}
 	if microk8sConfig.Spec.InitConfiguration != nil {
-		controlPlaneInput.HttpsProxy = microk8sConfig.Spec.InitConfiguration.HttpsProxy
-		controlPlaneInput.HttpProxy = microk8sConfig.Spec.InitConfiguration.HttpProxy
+		controlPlaneInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
+		controlPlaneInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
 		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
 		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
 			// set by default to 10 years
@@ -479,8 +478,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 	}
 
 	if microk8sConfig.Spec.InitConfiguration != nil {
-		workerInput.HttpsProxy = microk8sConfig.Spec.InitConfiguration.HttpsProxy
-		workerInput.HttpProxy = microk8sConfig.Spec.InitConfiguration.HttpProxy
+		workerInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
+		workerInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
 		workerInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
 	}
 
@@ -729,7 +728,6 @@ func (r *MicroK8sConfigReconciler) generateCA() (cert *string, key *string, err 
 
 // SetupWithManager sets up the controller with the Manager.
 func (r *MicroK8sConfigReconciler) SetupWithManager(ctx context.Context, mgr ctrl.Manager) error {
-
 	if r.MicroK8sInitLock == nil {
 		r.MicroK8sInitLock = locking.NewControlPlaneInitMutex(ctrl.LoggerFrom(ctx).WithName("init-locker"), mgr.GetClient())
 	}

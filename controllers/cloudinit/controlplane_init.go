@@ -85,8 +85,8 @@ type ControlPlaneInput struct {
 	Version                  string
 	PortOfClusterAgent       string
 	PortOfDqlite             string
-	HttpsProxy               *string
-	HttpProxy                *string
+	HTTPSProxy               *string
+	HTTPProxy                *string
 	NoProxy                  *string
 	Addons                   []string
 }
@@ -116,21 +116,21 @@ func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 		input.Addons = append(input.Addons, "dns")
 	}
 
-	var addons_str string
+	var addonsStr string
 	for _, addon := range input.Addons {
-		addons_str += fmt.Sprintf(" '%s' ", addon)
+		addonsStr += fmt.Sprintf(" '%s' ", addon)
 	}
-	cloudinit_str := strings.Replace(controlPlaneCloudInit, "{{.Addons}}", addons_str, -1)
+	cloudinitStr := strings.Replace(controlPlaneCloudInit, "{{.Addons}}", addonsStr, -1)
 
-	proxyCommands := generateProxyCommands(input.HttpsProxy, input.HttpProxy, input.NoProxy)
-	cloudinit_str = strings.Replace(cloudinit_str, "{{.ProxySection}}", proxyCommands, -1)
+	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
+	cloudinitStr = strings.Replace(cloudinitStr, "{{.ProxySection}}", proxyCommands, -1)
 
 	addr := net.ParseIP(input.ControlPlaneEndpoint)
 	if addr != nil {
 		input.ControlPlaneEndpointType = "IP"
 	}
 
-	userData, err := generate("InitControlplane", cloudinit_str, input)
+	userData, err := generate("InitControlplane", cloudinitStr, input)
 	if err != nil {
 		return nil, err
 	}

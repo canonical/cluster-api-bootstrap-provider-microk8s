@@ -67,8 +67,8 @@ type ControlPlaneJoinInput struct {
 	PortOfNodeToJoin         string
 	PortOfDqlite             string
 	Version                  string
-	HttpsProxy               *string
-	HttpProxy                *string
+	HTTPSProxy               *string
+	HTTPProxy                *string
 	NoProxy                  *string
 }
 
@@ -87,10 +87,10 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) ([]byte, error) {
 		input.ControlPlaneEndpointType = "IP"
 	}
 
-	proxyCommands := generateProxyCommands(input.HttpsProxy, input.HttpProxy, input.NoProxy)
-	cloudinit_str := strings.Replace(controlPlaneJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
+	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
+	cloudinitStr := strings.Replace(controlPlaneJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
 
-	userData, err := generate("JoinControlplane", cloudinit_str, input)
+	userData, err := generate("JoinControlplane", cloudinitStr, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")
 	}

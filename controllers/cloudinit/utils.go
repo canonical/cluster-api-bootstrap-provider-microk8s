@@ -37,8 +37,8 @@ func templateYAMLIndent(i int, input string) string {
 	return strings.Repeat(" ", i) + strings.Join(split, ident)
 }
 
-func extractVersionParts(version_str string) (int, int, error) {
-	v, err := version.NewVersion(version_str)
+func extractVersionParts(versionStr string) (int, int, error) {
+	v, err := version.NewVersion(versionStr)
 	if err != nil {
 		return 0, 0, err
 	}

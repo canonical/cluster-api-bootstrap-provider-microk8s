@@ -52,7 +52,7 @@ func TestNewInitControlPlaneCommands(t *testing.T) {
 	http := "http://proxy"
 	cpinputproxy := &ControlPlaneInput{
 		Version:   "v1.23.3",
-		HttpProxy: &http,
+		HTTPProxy: &http,
 	}
 
 	out, err = NewInitControlPlane(cpinputproxy)
@@ -66,7 +66,6 @@ func TestNewInitControlPlaneCommands(t *testing.T) {
 	for _, f := range expectedCommands {
 		g.Expect(a).To(ContainSubstring(f))
 	}
-
 }
 
 func TestNewJoinControlPlaneCommands(t *testing.T) {

@@ -1,0 +1,33 @@
+linters:
+  disable-all: true
+  enable:
+    # Enable all default checks
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+    # Enable additional linters
+    - asciicheck
+    - bidichk
+    - contextcheck
+    - errchkjson
+    - errorlint
+    - exhaustive
+    - exportloopref
+    - gofmt
+    - makezero
+    - misspell
+    - nilerr
+    - prealloc
+    - revive
+    - unparam
+    - whitespace
+
+linters-settings:
+  revive:
+    rules:
+      - name: blank-imports
+        disabled: true

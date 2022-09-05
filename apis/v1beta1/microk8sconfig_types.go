@@ -84,11 +84,11 @@ type InitConfiguration struct {
 
 	// The optional https proxy configuration
 	// +optional
-	HttpsProxy *string `json:"httpsProxy,omitempty"`
+	HTTPSProxy *string `json:"httpsProxy,omitempty"`
 
 	// The optional http proxy configuration
 	// +optional
-	HttpProxy *string `json:"httpProxy,omitempty"`
+	HTTPProxy *string `json:"httpProxy,omitempty"`
 
 	// The optional no proxy configuration
 	// +optional

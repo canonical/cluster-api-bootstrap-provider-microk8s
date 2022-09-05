@@ -56,8 +56,8 @@ type WorkerJoinInput struct {
 	PortOfNodeToJoin     string
 	Version              string
 	ControlPlaneEndpoint string
-	HttpsProxy           *string
-	HttpProxy            *string
+	HTTPSProxy           *string
+	HTTPProxy            *string
 	NoProxy              *string
 }
 
@@ -70,10 +70,10 @@ func NewJoinWorker(input *WorkerJoinInput) ([]byte, error) {
 	}
 	input.Version = generateSnapChannelArgument(major, minor)
 
-	proxyCommands := generateProxyCommands(input.HttpsProxy, input.HttpProxy, input.NoProxy)
-	cloudinit_str := strings.Replace(workerJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
+	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
+	cloudinitStr := strings.Replace(workerJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
 
-	userData, err := generate("JoinWorker", cloudinit_str, input)
+	userData, err := generate("JoinWorker", cloudinitStr, input)
 	if err != nil {
 		return nil, errors.Wrapf(err, "failed to generate user data for machine joining as worker")
 	}
