@@ -1,0 +1,14 @@
+# Kubernetes cluster configuration
+export KUBERNETES_VERSION=1.24.0
+export CONTROL_PLANE_MACHINE_COUNT=1
+export WORKER_MACHINE_COUNT=1
+
+# AWS region
+export AWS_REGION="eu-west-1"
+
+# AWS machine configuration
+export AWS_CREATE_BASTION=true
+export AWS_PUBLIC_IP=false
+export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
+export AWS_NODE_MACHINE_FLAVOR=t3.large
+export AWS_SSH_KEY_NAME=my-ssh-key
