@@ -926,6 +926,19 @@ metadata:
   name: capi-microk8s-bootstrap-manager-role
 rules:
 - apiGroups:
+  - ""
+  resources:
+  - configmaps
+  - secrets
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
+- apiGroups:
   - bootstrap.cluster.x-k8s.io
   resources:
   - microk8sconfigs
@@ -951,6 +964,23 @@ rules:
   - get
   - patch
   - update
+- apiGroups:
+  - cluster.x-k8s.io
+  resources:
+  - clusters
+  - clusters/finalizers
+  - clusters/status
+  - machines
+  - machines/finalizers
+  - machines/status
+  verbs:
+  - create
+  - delete
+  - get
+  - list
+  - patch
+  - update
+  - watch
 ---
 apiVersion: rbac.authorization.k8s.io/v1
 kind: ClusterRole
