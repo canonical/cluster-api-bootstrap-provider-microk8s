@@ -32,16 +32,12 @@ runcmd:
 - sudo echo IPOfNodeToJoin {{.IPOfNodeToJoin}}
 - sudo echo PortOfNodeToJoin {{.PortOfNodeToJoin}}
 - sudo echo Version {{.Version}}
-- sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 6443 -j REDIRECT --to-port 16443
-- sudo iptables -A PREROUTING -t nat  -p tcp --dport 6443 -j REDIRECT --to-port 16443
-- sudo apt-get update
-- sudo apt-get install iptables-persistent
 - sudo sh -c "while ! snap install microk8s --classic {{.Version}}; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
+- sudo microk8s stop
 - sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
 - sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
-- sudo microk8s stop
 {{.ProxySection}}
 - sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
 - sudo microk8s start
@@ -51,6 +47,19 @@ runcmd:
 - sudo microk8s status --wait-ready
 - sudo sh -c "while ! microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} ; do sleep 10 ; echo 'Retry join'; done"
 - sudo sleep 20
+- sudo microk8s status --wait-ready
+- sudo microk8s stop
+- sudo iptables -t nat -A OUTPUT -o lo -p tcp --dport 16443 -j REDIRECT --to-port 6443
+- sudo iptables -A PREROUTING -t nat  -p tcp --dport 16443 -j REDIRECT --to-port 6443
+- sudo apt-get update
+- sudo apt-get install iptables-persistent
+- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/args/kube-apiserver
+- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/client.config
+- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/scheduler.config
+- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/kubelet.config
+- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/proxy.config
+- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/controller.config
+- sudo microk8s start
 - sudo microk8s status --wait-ready
 - sudo microk8s add-node --token-ttl {{.JoinTokenTTLInSecs}} --token {{.JoinToken}}
 `
