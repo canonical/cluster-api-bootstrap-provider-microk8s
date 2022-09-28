@@ -78,12 +78,22 @@ run: manifests generate fmt vet ## Run a controller from your host.
 	go run ./main.go
 
 .PHONY: docker-build
-docker-build: test ## Build docker image with the manager.
-	docker build -t ${IMG} .
+docker-build-%: ## Build docker image with the manager.
+	docker build -t ${IMG}-$* . --build-arg arch=$*
+docker-build: docker-build-amd64 docker-build-arm64
 
 .PHONY: docker-push
-docker-push: ## Push docker image with the manager.
-	docker push ${IMG}
+docker-push-%: docker-build-% ## Push docker image with the manager.
+	docker push ${IMG}-$*
+docker-push: docker-push-amd64 docker-push-arm64
+
+.PHONY: docker-manifest
+docker-manifest: docker-push ## Push docker multi-arch manifest.
+	docker manifest rm ${IMG} || true
+	docker manifest create ${IMG} --amend ${IMG}-amd64 --amend ${IMG}-arm64
+	docker manifest annotate ${IMG} ${IMG}-amd64 --arch=amd64
+	docker manifest annotate ${IMG} ${IMG}-arm64 --arch=arm64
+	docker manifest push ${IMG}
 
 .PHONY: lint
 lint: golangci-lint ## Lint the codebase
