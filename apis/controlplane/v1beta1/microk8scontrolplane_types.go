@@ -23,8 +23,6 @@ import (
 	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 type MicroK8sControlPlaneMachineTemplate struct {
 	// Standard object's metadata.
 	// More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#metadata
@@ -38,9 +36,6 @@ type MicroK8sControlPlaneMachineTemplate struct {
 
 // MicroK8sControlPlaneSpec defines the desired state of MicroK8sControlPlane
 type MicroK8sControlPlaneSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	MachineTemplate MicroK8sControlPlaneMachineTemplate `json:"machineTemplate"`
 
 	Replicas int `json:"replicas"`

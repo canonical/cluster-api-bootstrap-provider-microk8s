@@ -13,35 +13,23 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
-
 package v1beta1
 
 import (
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
-
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 type MicroK8sConfigTemplateResource struct {
 	Spec MicroK8sConfigSpec `json:"spec,omitempty"`
 }
 
 // MicroK8sConfigTemplateSpec defines the desired state of MicroK8sConfigTemplate
 type MicroK8sConfigTemplateSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-
 	Template MicroK8sConfigTemplateResource `json:"template"`
 }
 
 // MicroK8sConfigTemplateStatus defines the observed state of MicroK8sConfigTemplate
-type MicroK8sConfigTemplateStatus struct {
-	// INSERT ADDITIONAL STATUS FIELD - define observed state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
-}
+type MicroK8sConfigTemplateStatus struct{}
 
 //+kubebuilder:object:root=true
 //+kubebuilder:subresource:status

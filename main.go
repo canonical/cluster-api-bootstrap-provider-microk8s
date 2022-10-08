@@ -107,8 +107,7 @@ func main() {
 	if err = (&controllers.MicroK8sConfigReconciler{
 		Client: mgr.GetClient(),
 		Scheme: mgr.GetScheme(),
-	}).SetupWithManager(context.TODO(),
-		mgr); err != nil {
+	}).SetupWithManager(context.TODO(), mgr); err != nil {
 		setupLog.Error(err, "unable to create controller", "controller", "MicroK8sConfig")
 		os.Exit(1)
 	}

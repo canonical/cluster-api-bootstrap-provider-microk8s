@@ -21,12 +21,9 @@ import (
 	"net"
 
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
-	clusterv1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
-	v1beta1 "sigs.k8s.io/cluster-api/api/v1beta1"
+	clusterv1 "sigs.k8s.io/cluster-api/api/v1beta1"
 )
 
-// EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-// NOTE: json tags are required.  Any new fields you add must have json tags for the fields to be serialized.
 // JoinConfiguration contains elements describing a particular node.
 // +k8s:deepcopy-gen:interfaces=k8s.io/apimachinery/pkg/runtime.Object
 
@@ -101,8 +98,6 @@ type InitConfiguration struct {
 
 // MicroK8sConfigSpec defines the desired state of MicroK8sConfig
 type MicroK8sConfigSpec struct {
-	// INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-	// Important: Run "make" to regenerate code after modifying this file
 	// InitConfiguration along with ClusterConfiguration are the configurations necessary for the init command
 	// +optional
 	ClusterConfiguration *ClusterConfiguration `json:"clusterConfiguration,omitempty"`
@@ -130,8 +125,9 @@ type MicroK8sConfigStatus struct {
 	// ObservedGeneration is the latest generation observed by the controller.
 	// +optional
 	ObservedGeneration int64 `json:"observedGeneration,omitempty"`
+
 	// +optional
-	Conditions v1beta1.Conditions `json:"conditions,omitempty"`
+	Conditions clusterv1.Conditions `json:"conditions,omitempty"`
 }
 
 //+kubebuilder:object:root=true
@@ -160,11 +156,11 @@ func init() {
 }
 
 // GetConditions returns the set of conditions for this object.
-func (c *MicroK8sConfig) GetConditions() clusterv1beta1.Conditions {
+func (c *MicroK8sConfig) GetConditions() clusterv1.Conditions {
 	return c.Status.Conditions
 }
 
 // SetConditions sets the conditions on this object.
-func (c *MicroK8sConfig) SetConditions(conditions clusterv1beta1.Conditions) {
+func (c *MicroK8sConfig) SetConditions(conditions clusterv1.Conditions) {
 	c.Status.Conditions = conditions
 }
