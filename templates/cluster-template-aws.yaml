@@ -32,6 +32,7 @@ spec:
   controlPlaneConfig:
     initConfiguration:
       joinTokenTTLInSecs: 9000
+      IPinIP: true
       addons:
         - dns
         - ingress
