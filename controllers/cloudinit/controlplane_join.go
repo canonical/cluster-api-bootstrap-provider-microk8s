@@ -40,11 +40,6 @@ runcmd:
 - sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
 - sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
 - sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
-- |
-  sudo sed 's/CALICO_IPV4POOL_VXLAN/CALICO_IPV4POOL_IPIP/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml
-  sudo sed 's/calico_backend: "vxlan"/calico_backend: "bird"/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml
-  sudo sed -i 's/ *# - -bird-ready/                - -bird-ready/' /var/snap/microk8s/current/args/cni-network/cni.yaml
-  sudo sed -i 's/ *# - -bird-live/                - -bird-live/' /var/snap/microk8s/current/args/cni-network/cni.yaml
 {{.ProxySection}}
 - sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
 - sudo microk8s start

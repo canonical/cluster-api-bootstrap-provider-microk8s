@@ -85,8 +85,8 @@ func generateIPinIPCommands(ipinip bool) string {
 		commands.WriteString("- sudo sleep 5\n")
 		commands.WriteString("- sudo sed 's/CALICO_IPV4POOL_VXLAN/CALICO_IPV4POOL_IPIP/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
 		commands.WriteString("- sudo sed 's/ \"vxlan\"/ \"bird\"/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
-		commands.WriteString("- sudo sed -i 's/ *# - -bird-ready/                - -bird-ready/' /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
-		commands.WriteString("- sudo sed -i 's/ *# - -bird-live/                - -bird-live/' /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
+		commands.WriteString("- sudo sed -i '/- -felix-ready/p;s/-felix-ready/-bird-ready/' /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
+		commands.WriteString("- sudo sed -i '/- -felix-live/p;s/-felix-live/-bird-live/' /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
 		commands.WriteString("- sudo microk8s.kubectl apply -f  /var/snap/microk8s/current/args/cni-network/cni.yaml\n")
 		return commands.String()
 	} else {
