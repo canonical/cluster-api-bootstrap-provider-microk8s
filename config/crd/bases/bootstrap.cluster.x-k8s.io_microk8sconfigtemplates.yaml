@@ -72,6 +72,9 @@ spec:
                         type: object
                       initConfiguration:
                         properties:
+                          IPinIP:
+                            description: The optional IPinIP configuration
+                            type: boolean
                           addons:
                             description: List of addons to be enabled upon cluster
                               creation

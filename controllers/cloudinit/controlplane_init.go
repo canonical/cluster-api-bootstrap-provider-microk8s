@@ -52,6 +52,7 @@ runcmd:
 - sudo echo Version {{.Version}}
 - sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
+- sudo echo "--service-node-port-range=30001-32767" >> /var/snap/microk8s/current/args/kube-apiserver
 - sudo microk8s refresh-certs /var/tmp
 - sudo sleep 30
 - sudo microk8s stop
@@ -76,13 +77,7 @@ runcmd:
 - sudo microk8s status --wait-ready
 - sudo microk8s add-node --token-ttl {{.JoinTokenTTLInSecs}} --token {{.JoinToken}}
 - sudo microk8s.kubectl delete svc kubernetes
-- sudo microk8s.kubectl delete ippools --all
-- sudo microk8s.kubectl delete -f  /var/snap/microk8s/current/args/cni-network/cni.yaml
-- sudo sleep 5
-- |
-  sudo sed 's/CALICO_IPV4POOL_VXLAN/CALICO_IPV4POOL_IPIP/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml
-  sudo sed 's/calico_backend: "vxlan"/calico_backend: "bird"/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml
-- sudo microk8s.kubectl apply -f  /var/snap/microk8s/current/args/cni-network/cni.yaml
+{{.IPinIPSection}}
 - sudo sh -c "for a in {{.Addons}} ; do echo 'Enabling ' \$a ; microk8s enable \$a ; sleep 10; microk8s status --wait-ready ; done"
 - sudo sleep 15
 `
@@ -104,6 +99,7 @@ type ControlPlaneInput struct {
 	HTTPProxy                *string
 	NoProxy                  *string
 	Addons                   []string
+	IPinIP                   bool
 }
 
 // NewInitControlPlane returns the user data string to be used on a controlplane instance.
@@ -139,6 +135,9 @@ func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
 
 	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
 	cloudinitStr = strings.Replace(cloudinitStr, "{{.ProxySection}}", proxyCommands, -1)
+
+	ipinipCommands := generateIPinIPCommands(input.IPinIP)
+	cloudinitStr = strings.Replace(cloudinitStr, "{{.IPinIPSection}}", ipinipCommands, -1)
 
 	addr := net.ParseIP(input.ControlPlaneEndpoint)
 	if addr != nil {

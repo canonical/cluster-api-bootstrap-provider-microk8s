@@ -34,7 +34,7 @@ import (
 type ClusterConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// cluster agent port (25000) and dqlite port (19001) set to use etcd ports 30000 and 2379 respectively
+	// cluster agent port (25000) and dqlite port (19001) set to use ports 30000 and 2379 respectively
 	// The default ports of cluster agent and dqlite are blocked by security groups and as a temporary
 	// workaround we reuse the etcd and calico ports that are open in the infra providers because kubeadm uses those.
 
@@ -97,6 +97,10 @@ type InitConfiguration struct {
 	// List of addons to be enabled upon cluster creation
 	// +optional
 	Addons []string `json:"addons,omitempty"`
+
+	// The optional IPinIP configuration
+	// +optional
+	IPinIP bool `json:"IPinIP,omitempty"`
 }
 
 // MicroK8sConfigSpec defines the desired state of MicroK8sConfig

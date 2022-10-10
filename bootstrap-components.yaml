@@ -44,11 +44,14 @@ spec:
                     type: string
                   portCompatibilityRemap:
                     default: true
-                    description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 2380 and 2379. The default ports are blocked via security groups in several infra providers.
+                    description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 30000 and 2379. The default ports are blocked via security groups in several infra providers.
                     type: boolean
                 type: object
               initConfiguration:
                 properties:
+                  IPinIP:
+                    description: The optional IPinIP configuration
+                    type: boolean
                   addons:
                     description: List of addons to be enabled upon cluster creation
                     items:
@@ -204,11 +207,14 @@ spec:
                             type: string
                           portCompatibilityRemap:
                             default: true
-                            description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 2380 and 2379. The default ports are blocked via security groups in several infra providers.
+                            description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 30000 and 2379. The default ports are blocked via security groups in several infra providers.
                             type: boolean
                         type: object
                       initConfiguration:
                         properties:
+                          IPinIP:
+                            description: The optional IPinIP configuration
+                            type: boolean
                           addons:
                             description: List of addons to be enabled upon cluster creation
                             items:
@@ -486,11 +492,14 @@ spec:
                     type: string
                   portCompatibilityRemap:
                     default: true
-                    description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 2380 and 2379. The default ports are blocked via security groups in several infra providers.
+                    description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 30000 and 2379. The default ports are blocked via security groups in several infra providers.
                     type: boolean
                 type: object
               initConfiguration:
                 properties:
+                  IPinIP:
+                    description: The optional IPinIP configuration
+                    type: boolean
                   addons:
                     description: List of addons to be enabled upon cluster creation
                     items:
@@ -646,11 +655,14 @@ spec:
                             type: string
                           portCompatibilityRemap:
                             default: true
-                            description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 2380 and 2379. The default ports are blocked via security groups in several infra providers.
+                            description: PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001) to 30000 and 2379. The default ports are blocked via security groups in several infra providers.
                             type: boolean
                         type: object
                       initConfiguration:
                         properties:
+                          IPinIP:
+                            description: The optional IPinIP configuration
+                            type: boolean
                           addons:
                             description: List of addons to be enabled upon cluster creation
                             items:

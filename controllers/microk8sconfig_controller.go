@@ -307,6 +307,10 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		controlPlaneInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
 		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
 
+		if microk8sConfig.Spec.InitConfiguration.IPinIP {
+			controlPlaneInput.IPinIP = true
+		}
+
 		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
 			// set by default to 10 years
 			controlPlaneInput.JoinTokenTTLInSecs = 315569260
@@ -396,6 +400,11 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		controlPlaneInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
 		controlPlaneInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
 		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
+
+		if microk8sConfig.Spec.InitConfiguration.IPinIP {
+			controlPlaneInput.IPinIP = true
+		}
+
 		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
 			// set by default to 10 years
 			controlPlaneInput.JoinTokenTTLInSecs = 315569260

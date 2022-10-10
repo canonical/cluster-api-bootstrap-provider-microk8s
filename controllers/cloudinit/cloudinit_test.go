@@ -32,6 +32,7 @@ func TestNewInitControlPlaneCommands(t *testing.T) {
 		JoinTokenTTLInSecs:   56789,
 		Version:              "v1.23.3",
 		Addons:               addons,
+		IPinIP:               true,
 	}
 
 	out, err := NewInitControlPlane(cpinput)
