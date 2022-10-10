@@ -76,8 +76,12 @@ runcmd:
 - sudo microk8s status --wait-ready
 - sudo microk8s add-node --token-ttl {{.JoinTokenTTLInSecs}} --token {{.JoinToken}}
 - sudo microk8s.kubectl delete svc kubernetes
+- sudo microk8s.kubectl delete ippools --all
 - sudo microk8s.kubectl delete -f  /var/snap/microk8s/current/args/cni-network/cni.yaml
 - sudo sleep 5
+- |
+  sudo sed 's/CALICO_IPV4POOL_VXLAN/CALICO_IPV4POOL_IPIP/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml
+  sudo sed 's/calico_backend: "vxlan"/calico_backend: "bird"/' -i /var/snap/microk8s/current/args/cni-network/cni.yaml
 - sudo microk8s.kubectl apply -f  /var/snap/microk8s/current/args/cni-network/cni.yaml
 - sudo sh -c "for a in {{.Addons}} ; do echo 'Enabling ' \$a ; microk8s enable \$a ; sleep 10; microk8s status --wait-ready ; done"
 - sudo sleep 15

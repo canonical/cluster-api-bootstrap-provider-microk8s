@@ -34,12 +34,12 @@ import (
 type ClusterConfiguration struct {
 	metav1.TypeMeta `json:",inline"`
 
-	// cluster agent port (25000) and dqlite port (19001) set to use calico port 179 and etcd port 2380 respectively
+	// cluster agent port (25000) and dqlite port (19001) set to use etcd ports 30000 and 2379 respectively
 	// The default ports of cluster agent and dqlite are blocked by security groups and as a temporary
 	// workaround we reuse the etcd and calico ports that are open in the infra providers because kubeadm uses those.
 
 	// PortCompatibilityRemap switches the default ports used by cluster agent (25000) and dqlite (19001)
-	// to 179 and 2380. The default ports are blocked via security groups in several infra providers.
+	// to 30000 and 2379. The default ports are blocked via security groups in several infra providers.
 	// +kubebuilder:default:=true
 	// +optional
 	PortCompatibilityRemap bool `json:"portCompatibilityRemap,omitempty"`
@@ -134,9 +134,9 @@ type MicroK8sConfigStatus struct {
 	Conditions v1beta1.Conditions `json:"conditions,omitempty"`
 }
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:storageversion
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // MicroK8sConfig is the Schema for the microk8sconfigs API
 type MicroK8sConfig struct {
 	metav1.TypeMeta   `json:",inline"`

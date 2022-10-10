@@ -56,8 +56,8 @@ spec:
                   portCompatibilityRemap:
                     default: true
                     description: PortCompatibilityRemap switches the default ports
-                      used by cluster agent (25000) and dqlite (19001) to 179 and
-                      2380. The default ports are blocked via security groups in several
+                      used by cluster agent (25000) and dqlite (19001) to 30000 and
+                      2379. The default ports are blocked via security groups in several
                       infra providers.
                     type: boolean
                 type: object

@@ -85,10 +85,10 @@ type Scope struct {
 
 const (
 	defaultDqlitePort  string = "19001"
-	remappedDqlitePort string = "2380"
+	remappedDqlitePort string = "2379"
 
 	defaultClusterAgentPort  string = "25000"
-	remappedClusterAgentPort string = "179"
+	remappedClusterAgentPort string = "30000"
 )
 
 //+kubebuilder:rbac:groups=bootstrap.cluster.x-k8s.io,resources=microk8sconfigs,verbs=get;list;watch;create;update;patch;delete
