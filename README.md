@@ -146,6 +146,8 @@ secret "microk8s-aws-kubeconfig" deleted
 
 **Note:** if you want to provide your own CA and/or the join token used to form a cluster you will need to create the respective secrets (`<cluster-name>-ca` and `<cluster-name>-jointoken`) before applying the cluster manifests.
 
+**Note:** the default cluster template for AWS ensures that the default security groups created by the AWS infrastructure provider are sufficient for the cluster to work as expected. For more complex scenarios, you might have to configure your own security groups and set the AWSCluster spec accordingly. For more details, refer to the [upstream AWS provider documentation](https://cluster-api-aws.sigs.k8s.io/topics/bring-your-own-aws-infrastructure.html#security-groups).
+
 #### OpenStack
 
 > *NOTE*: Ensure that you have properly deployed the OpenStack infrastructure provider prior to executing the commands below. See [Initialization for common providers](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers)
