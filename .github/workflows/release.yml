@@ -16,13 +16,17 @@ jobs:
       - name: Retrieve build information
         id: build
         run: |
-          echo "::set-output name=version::${GITHUB_REF#refs/tags/}"
+          VERSION="${GITHUB_REF#refs/tags/}"
+          echo "Releasing ${VERSION}"
+          echo "VERSION=${VERSION}" >> $GITHUB_ENV
+          sed -i "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,cdkbot/capi-bootstrap-provider-microk8s:${VERSION//v}," bootstrap-components.yaml
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v0.1.14
         with:
+          name: 'Release ${{ env.VERSION }}'
           files: |
             bootstrap-components.yaml
             metadata.yaml
           generate_release_notes: true
-          draft: true
-          prerelease: ${{ contains(steps.build.outputs.version, 'rc' }}
+          draft: false
+          prerelease: ${{ contains(env.VERSION, 'rc') }}
