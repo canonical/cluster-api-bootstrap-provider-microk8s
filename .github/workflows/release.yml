@@ -19,7 +19,7 @@ jobs:
           VERSION="${GITHUB_REF#refs/tags/}"
           echo "Releasing ${VERSION}"
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
-          sed -i "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,cdkbot/capi-bootstrap-provider-microk8s:${VERSION//v}," bootstrap-components.yaml
+          sed -i "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,docker.io/cdkbot/capi-bootstrap-provider-microk8s:${VERSION//v}," bootstrap-components.yaml
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v0.1.14
         with:
