@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -49,6 +49,10 @@ runcmd:
 - sudo echo ControlPlaneEndpointType {{.ControlPlaneEndpointType}}
 - sudo echo JoinTokenTTLInSecs {{.JoinTokenTTLInSecs}}
 - sudo echo Version {{.Version}}
+- sudo systemctl stop kubelet || true
+- sudo systemctl disable kubelet || true
+- sudo systemctl stop containerd || true
+- sudo systemctl disable containerd || true
 - sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
 - sudo echo "--service-node-port-range=30001-32767" >> /var/snap/microk8s/current/args/kube-apiserver

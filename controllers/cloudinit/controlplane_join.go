@@ -32,6 +32,10 @@ runcmd:
 - sudo echo IPOfNodeToJoin {{.IPOfNodeToJoin}}
 - sudo echo PortOfNodeToJoin {{.PortOfNodeToJoin}}
 - sudo echo Version {{.Version}}
+- sudo systemctl stop kubelet || true
+- sudo systemctl disable kubelet || true
+- sudo systemctl stop containerd || true
+- sudo systemctl disable containerd || true
 - sudo sh -c "while ! snap install microk8s --classic {{.Version}}; do sleep 10 ; echo 'Retry snap installation'; done"
 - sudo microk8s status --wait-ready
 - sudo echo "--service-node-port-range=30001-32767" >> /var/snap/microk8s/current/args/kube-apiserver
