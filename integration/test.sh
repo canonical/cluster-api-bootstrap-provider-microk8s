@@ -47,10 +47,13 @@ while ! clusterctl get kubeconfig test-ci-cluster > ./kubeconfig; do
     sleep 30
 done
 
+echo "Workload cluster kubeconfig file is: "
+cat ./kubeconfig
+
 # wait for nodes to come up
 while ! kubectl --kubeconfig=./kubeconfig get node | grep "\<Ready\>" | wc -l | grep 6; do
-    kubectl get cluster,machines,awscluster,awsmachines
-    kubectl --kubeconfig=./kubeconfig get node || true
+    kubectl get cluster,machines,awscluster,awsmachines || true
+    kubectl --kubeconfig=./kubeconfig get node,pod -A || true
 
     echo waiting for 6 nodes to become ready
     sleep 20
@@ -64,3 +67,5 @@ while ! kubectl --kubeconfig=./kubeconfig wait deploy/bot --for=jsonpath='{.stat
     echo waiting for deployment to come up
     sleep 20
 done
+
+kubectl --kubeconfig=./kubeconfig get deploy,node,pod -A || true
