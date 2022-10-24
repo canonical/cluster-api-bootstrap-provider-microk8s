@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -31,9 +31,9 @@ type MicroK8sConfigTemplateSpec struct {
 // MicroK8sConfigTemplateStatus defines the observed state of MicroK8sConfigTemplate
 type MicroK8sConfigTemplateStatus struct{}
 
-//+kubebuilder:object:root=true
-//+kubebuilder:subresource:status
-//+kubebuilder:storageversion
+// +kubebuilder:object:root=true
+// +kubebuilder:subresource:status
+// +kubebuilder:storageversion
 // MicroK8sConfigTemplate is the Schema for the microk8sconfigtemplates API
 type MicroK8sConfigTemplate struct {
 	metav1.TypeMeta   `json:",inline"`

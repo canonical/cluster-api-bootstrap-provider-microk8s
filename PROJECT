@@ -35,13 +35,4 @@ resources:
   kind: MicroK8sConfig
   path: cluster-api-bootstrap-provider-microk8s/apis/v1beta1
   version: v1beta1
-- api:
-    crdVersion: v1
-    namespaced: true
-  controller: true
-  domain: bootstrap.cluster.x-k8s.io
-  group: controlplane
-  kind: MicroK8sControlPlane
-  path: cluster-api-bootstrap-provider-microk8s/apis/controlplane/v1beta1
-  version: v1beta1
 version: "3"

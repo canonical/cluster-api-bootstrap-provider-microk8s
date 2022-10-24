@@ -36,10 +36,8 @@ spec:
             description: MicroK8sConfigSpec defines the desired state of MicroK8sConfig
             properties:
               clusterConfiguration:
-                description: 'INSERT ADDITIONAL SPEC FIELDS - desired state of cluster
-                  Important: Run "make" to regenerate code after modifying this file
-                  InitConfiguration along with ClusterConfiguration are the configurations
-                  necessary for the init command'
+                description: InitConfiguration along with ClusterConfiguration are
+                  the configurations necessary for the init command
                 properties:
                   apiVersion:
                     description: 'APIVersion defines the versioned schema of this

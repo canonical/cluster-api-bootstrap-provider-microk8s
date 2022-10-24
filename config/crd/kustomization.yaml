@@ -5,12 +5,11 @@ resources:
 - bases/bootstrap.cluster.x-k8s.io_microk8sconfigtemplates.yaml
 - bases/bootstrap.cluster.x-k8s.io_microk8sconfigs.yaml
 
-- bases/controlplane.bootstrap.cluster.x-k8s.io_microk8scontrolplanes.yaml
 #+kubebuilder:scaffold:crdkustomizeresource
 commonLabels:
   cluster.x-k8s.io/provider: bootstrap-microk8s
   cluster.x-k8s.io/v1beta1: v1beta1
-  
+
 patchesStrategicMerge:
 # [WEBHOOK] To enable webhook, uncomment all the sections with [WEBHOOK] prefix.
 # patches here are for enabling the conversion webhook for each CRD

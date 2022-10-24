@@ -37,18 +37,13 @@ spec:
             description: MicroK8sConfigTemplateSpec defines the desired state of MicroK8sConfigTemplate
             properties:
               template:
-                description: 'EDIT THIS FILE!  THIS IS SCAFFOLDING FOR YOU TO OWN!
-                  NOTE: json tags are required.  Any new fields you add must have
-                  json tags for the fields to be serialized.'
                 properties:
                   spec:
                     description: MicroK8sConfigSpec defines the desired state of MicroK8sConfig
                     properties:
                       clusterConfiguration:
-                        description: 'INSERT ADDITIONAL SPEC FIELDS - desired state
-                          of cluster Important: Run "make" to regenerate code after
-                          modifying this file InitConfiguration along with ClusterConfiguration
-                          are the configurations necessary for the init command'
+                        description: InitConfiguration along with ClusterConfiguration
+                          are the configurations necessary for the init command
                         properties:
                           apiVersion:
                             description: 'APIVersion defines the versioned schema
