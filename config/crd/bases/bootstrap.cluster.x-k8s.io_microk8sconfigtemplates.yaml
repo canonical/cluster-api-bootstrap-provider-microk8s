@@ -101,20 +101,6 @@ spec:
                               this from the endpoint the client submits requests to.
                               Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#types-kinds'
                             type: string
-                          localAPIEndpoint:
-                            properties:
-                              host:
-                                description: The hostname on which the API server
-                                  is serving.
-                                type: string
-                              port:
-                                description: The port on which the API server is serving.
-                                format: int32
-                                type: integer
-                            required:
-                            - host
-                            - port
-                            type: object
                           noProxy:
                             description: The optional no proxy configuration
                             type: string
