@@ -51,7 +51,7 @@ echo "Workload cluster kubeconfig file is: "
 cat ./kubeconfig
 
 # wait for nodes to come up
-while ! kubectl --kubeconfig=./kubeconfig get node | grep "\<Ready\>" | wc -l | grep 6; do
+while ! kubectl --kubeconfig=./kubeconfig get node | grep "Ready" | wc -l | grep 6; do
     kubectl get cluster,machines,awscluster,awsmachines || true
     kubectl --kubeconfig=./kubeconfig get node,pod -A || true
 

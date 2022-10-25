@@ -65,8 +65,7 @@ test: manifests generate fmt vet envtest ## Run tests.
 
 .PHONY: component
 component: manifests kustomize ## Produce the bootstrap-components.yaml.
-	$(KUSTOMIZE) build config/crd/ > $(COMPSFILE)
-	echo "---" >> $(COMPSFILE)
+	echo "---" > $(COMPSFILE)
 	$(KUSTOMIZE) build config/default/ >> $(COMPSFILE)
 
 .PHONY: build
