@@ -54,21 +54,6 @@ func (in *ClusterConfiguration) DeepCopyObject() runtime.Object {
 func (in *InitConfiguration) DeepCopyInto(out *InitConfiguration) {
 	*out = *in
 	out.TypeMeta = in.TypeMeta
-	if in.HTTPSProxy != nil {
-		in, out := &in.HTTPSProxy, &out.HTTPSProxy
-		*out = new(string)
-		**out = **in
-	}
-	if in.HTTPProxy != nil {
-		in, out := &in.HTTPProxy, &out.HTTPProxy
-		*out = new(string)
-		**out = **in
-	}
-	if in.NoProxy != nil {
-		in, out := &in.NoProxy, &out.NoProxy
-		*out = new(string)
-		**out = **in
-	}
 	if in.Addons != nil {
 		in, out := &in.Addons, &out.Addons
 		*out = make([]string, len(*in))
