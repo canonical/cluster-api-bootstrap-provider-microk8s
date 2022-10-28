@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-    http://www.apache.org/licenses/LICENSE-2.0
+	http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,35 +18,57 @@ package cloudinit
 
 import (
 	"bytes"
-	_ "embed"
+	"fmt"
 	"text/template"
-
-	"github.com/pkg/errors"
 )
 
-const (
-	cloudConfigHeader = `## template: jinja
-#cloud-config
-`
-)
-
-// BaseUserData is shared across all the various types of files written to disk.
-type BaseUserData struct {
-	Header string
+// File is a file that cloud-init will create.
+type File struct {
+	// Content of the file to create.
+	Content string `yaml:"content"`
+	// Path where the file should be created.
+	Path string `yaml:"path"`
+	// Permissions of the file to create, e.g. "0600"
+	Permissions string `yaml:"permissions"`
+	// Owner of the file to create, e.g. "root:root"
+	Owner string `yaml:"owner"`
 }
 
-func generate(kind string, tpl string, data interface{}) ([]byte, error) {
-	tm := template.New(kind).Funcs(defaultTemplateFuncMap)
+// CloudConfig is cloud-init userdata. The schema matches the examples found in
+// https://cloudinit.readthedocs.io/en/latest/topics/examples.html.
+type CloudConfig struct {
+	// WriteFiles is a list of files cloud-init will create on the first boot.
+	WriteFiles []File `yaml:"write_files"`
 
-	t, err := tm.Parse(tpl)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to parse %s template", kind)
+	// RunCommands is a list of commands to execute during the first boot.
+	RunCommands []string `yaml:"runcmd"`
+
+	// BootCommands is a list of commands to run early in the boot process.
+	BootCommands []string `yaml:"bootcmd"`
+}
+
+// GenerateCloudConfig generates userdata from a CloudConfig.
+func GenerateCloudConfig(config *CloudConfig) ([]byte, error) {
+	tmpl := template.Must(template.New("CloudConfigTemplate").Funcs(templateFuncsMap).Parse(mustGetScript(cloudConfigTemplate)))
+
+	b := &bytes.Buffer{}
+	if err := tmpl.Execute(b, config); err != nil {
+		return nil, fmt.Errorf("failed to render cloud-config: %w", err)
 	}
+	return b.Bytes(), nil
+}
 
-	var out bytes.Buffer
-	if err := t.Execute(&out, data); err != nil {
-		return nil, errors.Wrapf(err, "failed to generate %s template", kind)
+func NewBaseCloudConfig() *CloudConfig {
+	writeFiles := make([]File, 0, len(allScripts))
+	for _, script := range allScripts {
+		writeFiles = append(writeFiles, File{
+			Content:     mustGetScript(script),
+			Path:        scriptPath(script),
+			Permissions: "0700",
+			Owner:       "root:root",
+		})
 	}
-
-	return out.Bytes(), nil
+	return &CloudConfig{
+		WriteFiles: writeFiles,
+	}
 }

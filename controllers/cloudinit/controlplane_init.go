@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,140 +13,105 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cloudinit
 
 import (
 	"fmt"
 	"net"
+	"path/filepath"
 	"strings"
+
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
-/*
-The following cloudinit includes a number of hacks we need to address as we move forward:
-
- - redirect the API server port from 16443 to 6443
-By default MicroK8s sets the API server port to 16443. We should investigate two options here:
-1. See how we can configure the security groups of the infra providers to allow 16443.
-2. Get the API server port configured to 6443
-
- - This cloudinit (including the hacks) is somewhat duplicated for the joining nodes we should
-address this.
-*/
-
-const (
-	controlPlaneCloudInit = `{{.Header}}
-write_files:
-- content: |
-{{.CAKey | Indent 4}}
-  path: /var/tmp/ca.key
-  permissions: '0600'
-- content: |
-{{.CACert | Indent 4}}
-  path: /var/tmp/ca.crt
-  permissions: '0600'
-runcmd:
-- sudo echo ControlPlaneEndpoint {{.ControlPlaneEndpoint}}
-- sudo echo ControlPlaneEndpointType {{.ControlPlaneEndpointType}}
-- sudo echo JoinTokenTTLInSecs {{.JoinTokenTTLInSecs}}
-- sudo echo Version {{.Version}}
-- sudo systemctl stop kubelet || true
-- sudo systemctl disable kubelet || true
-- sudo systemctl stop containerd || true
-- sudo systemctl disable containerd || true
-- sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
-- sudo microk8s status --wait-ready
-- sudo echo "--service-node-port-range=30001-32767" >> /var/snap/microk8s/current/args/kube-apiserver
-- sudo microk8s refresh-certs /var/tmp
-- sudo sleep 30
-- sudo microk8s stop
-- sudo sed -i 's/25000/{{.PortOfClusterAgent}}/' /var/snap/microk8s/current/args/cluster-agent
-- sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
-- sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
-{{.ProxySection}}
-- sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/args/kube-apiserver
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/client.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/scheduler.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/kubelet.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/proxy.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/controller.config
-- sudo microk8s start
-- sudo microk8s status --wait-ready
-- sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
-- sudo microk8s status --wait-ready
-- sudo microk8s add-node --token-ttl {{.JoinTokenTTLInSecs}} --token {{.JoinToken}}
-- sudo microk8s.kubectl delete svc kubernetes
-{{.IPinIPSection}}
-- sudo sh -c "for a in {{.Addons}} ; do echo 'Enabling ' \$a ; microk8s enable \$a ; sleep 10; microk8s status --wait-ready ; done"
-- sudo sleep 15
-`
-)
-
-// ControlPlaneInput defines the context to generate a controlplane instance user data.
-type ControlPlaneInput struct {
-	BaseUserData
-	CACert                   string
-	CAKey                    string
-	ControlPlaneEndpoint     string
-	ControlPlaneEndpointType string
-	JoinToken                string
-	JoinTokenTTLInSecs       int64
-	Version                  string
-	PortOfClusterAgent       string
-	PortOfDqlite             string
-	HTTPSProxy               *string
-	HTTPProxy                *string
-	NoProxy                  *string
-	Addons                   []string
-	IPinIP                   bool
+// ControlPlaneInitInput defines the context needed to generate a controlplane instance to init a cluster.
+type ControlPlaneInitInput struct {
+	// CAKey is the PEM-encoded key of the cluster CA certificate.
+	CAKey string
+	// CACert is the PEM-encoded cert of the cluster CA certificate.
+	CACert string
+	// ControlPlaneEndpoint is the control plane endpoint of the cluster.
+	ControlPlaneEndpoint string
+	// Token is the token that will be used for joining other nodes to the cluster.
+	Token string
+	// TokenTTL configures how many seconds the join token will be valid.
+	TokenTTL int64
+	// KubernetesVersion is the Kubernetes version we want to install.
+	KubernetesVersion string
+	// ClusterAgentPort is the port that cluster-agent binds to.
+	ClusterAgentPort string
+	// DqlitePort is the port that dqlite binds to.
+	DqlitePort string
+	// ContainerdHTTPProxy is http_proxy configuration for containerd.
+	ContainerdHTTPProxy string
+	// ContainerdHTTPSProxy is https_proxy configuration for containerd.
+	ContainerdHTTPSProxy string
+	// ContainerdNoProxy is no_proxy configuration for containerd.
+	ContainerdNoProxy string
+	// Addons is the list of addons to enable.
+	Addons []string
+	// IPinIP defines whether Calico will use IPinIP mode for cluster networking.
+	IPinIP bool
 }
 
-// NewInitControlPlane returns the user data string to be used on a controlplane instance.
-func NewInitControlPlane(input *ControlPlaneInput) ([]byte, error) {
-	input.Header = cloudConfigHeader
-	input.ControlPlaneEndpointType = "DNS"
-	major, minor, err := extractVersionParts(input.Version)
-	if err != nil {
-		return nil, err
+func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
+	// ensure token is valid
+	if len(input.Token) != 32 {
+		return nil, fmt.Errorf("join token %q is invalid; length must be 32 characters", input.Token)
 	}
-	input.Version = generateSnapChannelArgument(major, minor)
+	if input.TokenTTL <= 0 {
+		return nil, fmt.Errorf("join token TTL %q is not a positive number", input.TokenTTL)
+	}
 
-	// Get at least dns enabled
-	if input.Addons == nil {
-		input.Addons = []string{"dns"}
+	// figure out endpoint type
+	endpointType := "DNS"
+	if net.ParseIP(input.ControlPlaneEndpoint) != nil {
+		endpointType = "IP"
 	}
-	found := false
+
+	// quote addons to add to the command-line later
+	hasDNSAddon := false
+	addons := make([]string, 0, len(input.Addons))
 	for _, addon := range input.Addons {
 		if strings.Contains(addon, "dns") {
-			found = true
-			break
+			hasDNSAddon = true
 		}
+		addons = append(addons, fmt.Sprintf("%q", addon))
 	}
-	if !found {
-		input.Addons = append(input.Addons, "dns")
-	}
-
-	var addonsStr string
-	for _, addon := range input.Addons {
-		addonsStr += fmt.Sprintf(" '%s' ", addon)
-	}
-	cloudinitStr := strings.Replace(controlPlaneCloudInit, "{{.Addons}}", addonsStr, -1)
-
-	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
-	cloudinitStr = strings.Replace(cloudinitStr, "{{.ProxySection}}", proxyCommands, -1)
-
-	ipinipCommands := generateIPinIPCommands(input.IPinIP)
-	cloudinitStr = strings.Replace(cloudinitStr, "{{.IPinIPSection}}", ipinipCommands, -1)
-
-	addr := net.ParseIP(input.ControlPlaneEndpoint)
-	if addr != nil {
-		input.ControlPlaneEndpointType = "IP"
+	// always include the dns addon
+	if !hasDNSAddon {
+		addons = append(addons, fmt.Sprintf("%q", "dns"))
 	}
 
-	userData, err := generate("InitControlplane", cloudinitStr, input)
+	// figure out snap channel from KubernetesVersion
+	// TODO: support specifying the snap channel
+	kubernetesVersion, err := version.ParseSemantic(input.KubernetesVersion)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("kubernetes version %q is not a semantic version: %w", input.KubernetesVersion, err)
 	}
 
-	return userData, nil
+	cloudConfig := NewBaseCloudConfig()
+	cloudConfig.WriteFiles = append(
+		cloudConfig.WriteFiles,
+		File{Content: input.CAKey, Path: filepath.Join("/var", "tmp", "ca.key"), Permissions: "0600", Owner: "root:root"},
+		File{Content: input.CACert, Path: filepath.Join("/var", "tmp", "ca.crt"), Permissions: "0600", Owner: "root:root"},
+	)
+
+	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
+		"set -x",
+		scriptPath(disableHostServicesScript),
+		fmt.Sprintf("%s %d.%d", scriptPath(installMicroK8sScript), kubernetesVersion.Major(), kubernetesVersion.Minor()),
+		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),
+		"microk8s status --wait-ready",
+		"microk8s refresh-certs /var/tmp",
+		fmt.Sprintf("%s %v", scriptPath(configureCalicoIPIPScript), input.IPinIP),
+		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
+		fmt.Sprintf("%s %q", scriptPath(configureDqlitePortScript), input.DqlitePort),
+		fmt.Sprintf("%s %q %q", scriptPath(configureAPIServerScript), endpointType, input.ControlPlaneEndpoint),
+		fmt.Sprintf("%s %s", scriptPath(microk8sEnableScript), strings.Join(addons, " ")),
+		fmt.Sprintf("microk8s add-node --token-ttl %v --token %q", input.TokenTTL, input.Token),
+	)
+
+	return cloudConfig, nil
 }

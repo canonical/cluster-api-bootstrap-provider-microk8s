@@ -17,98 +17,76 @@ limitations under the License.
 package cloudinit
 
 import (
+	"fmt"
 	"net"
-	"strings"
 
-	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
-const (
-	controlPlaneJoinCloudInit = `{{.Header}}
-runcmd:
-- sudo echo ControlPlaneEndpoint {{.ControlPlaneEndpoint}}
-- sudo echo ControlPlaneEndpointType {{.ControlPlaneEndpointType}}
-- sudo echo JoinTokenTTLInSecs {{.JoinTokenTTLInSecs}}
-- sudo echo IPOfNodeToJoin {{.IPOfNodeToJoin}}
-- sudo echo PortOfNodeToJoin {{.PortOfNodeToJoin}}
-- sudo echo Version {{.Version}}
-- sudo systemctl stop kubelet || true
-- sudo systemctl disable kubelet || true
-- sudo systemctl stop containerd || true
-- sudo systemctl disable containerd || true
-- sudo sh -c "while ! snap install microk8s --classic {{.Version}}; do sleep 10 ; echo 'Retry snap installation'; done"
-- sudo microk8s status --wait-ready
-- sudo echo "--service-node-port-range=30001-32767" >> /var/snap/microk8s/current/args/kube-apiserver
-{{.IPinIPSection}}
-- sudo microk8s stop
-- sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
-- sudo grep Address /var/snap/microk8s/current/var/kubernetes/backend/info.yaml > /var/tmp/port-update.yaml
-- sudo sed -i 's/19001/{{.PortOfDqlite}}/' /var/tmp/port-update.yaml
-{{.ProxySection}}
-- sudo mv /var/tmp/port-update.yaml /var/snap/microk8s/current/var/kubernetes/backend/update.yaml
-- sudo microk8s start
-- sudo microk8s status --wait-ready
-- sudo sed -i '/^DNS.1 = kubernetes/a {{.ControlPlaneEndpointType}}.100 = {{.ControlPlaneEndpoint}}' /var/snap/microk8s/current/certs/csr.conf.template
-- sudo sleep 10
-- sudo microk8s status --wait-ready
-- sudo sh -c "while ! microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} ; do sleep 10 ; echo 'Retry join'; done"
-- sudo sleep 20
-- sudo microk8s status --wait-ready
-- sudo microk8s stop
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/args/kube-apiserver
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/client.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/scheduler.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/kubelet.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/proxy.config
-- sudo sed -i 's/16443/6443/' /var/snap/microk8s/current/credentials/controller.config
-- sudo microk8s start
-- sudo microk8s status --wait-ready
-- sudo microk8s add-node --token-ttl {{.JoinTokenTTLInSecs}} --token {{.JoinToken}}
-`
-)
-
-// ControlPlaneJoinInput defines context to generate controlplane instance user data for control plane node join.
+// ControlPlaneJoinInput defines the context needed to generate a controlplane instance to join a cluster.
 type ControlPlaneJoinInput struct {
-	BaseUserData
-	ControlPlaneEndpoint     string
-	ControlPlaneEndpointType string
-	JoinToken                string
-	JoinTokenTTLInSecs       int64
-	IPOfNodeToJoin           string
-	PortOfNodeToJoin         string
-	PortOfDqlite             string
-	Version                  string
-	HTTPSProxy               *string
-	HTTPProxy                *string
-	NoProxy                  *string
-	IPinIP                   bool
+	// ControlPlaneEndpoint is the control plane endpoint of the cluster.
+	ControlPlaneEndpoint string
+	// Token is the token that will be used for joining other nodes to the cluster.
+	Token string
+	// TokenTTL configures how many seconds the join token will be valid.
+	TokenTTL int64
+	// KubernetesVersion is the Kubernetes version we want to install.
+	KubernetesVersion string
+	// ClusterAgentPort is the port that cluster-agent binds to.
+	ClusterAgentPort string
+	// DqlitePort is the port that dqlite binds to.
+	DqlitePort string
+	// ContainerdHTTPProxy is http_proxy configuration for containerd.
+	ContainerdHTTPProxy string
+	// ContainerdHTTPSProxy is https_proxy configuration for containerd.
+	ContainerdHTTPSProxy string
+	// ContainerdNoProxy is no_proxy configuration for containerd.
+	ContainerdNoProxy string
+	// IPinIP defines whether Calico will use IPinIP mode for cluster networking.
+	IPinIP bool
+	// JoinNodeIP is the IP address of the node to join
+	JoinNodeIP string
 }
 
-// NewJoinControlPlane returns the user data string to be used on a new control plane instance.
-func NewJoinControlPlane(input *ControlPlaneJoinInput) ([]byte, error) {
-	input.Header = cloudConfigHeader
-	major, minor, err := extractVersionParts(input.Version)
+func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
+	// ensure token is valid
+	if len(input.Token) != 32 {
+		return nil, fmt.Errorf("join token %q is invalid; length must be 32 characters", input.Token)
+	}
+	if input.TokenTTL <= 0 {
+		return nil, fmt.Errorf("join token TTL %q is not a positive number", input.TokenTTL)
+	}
+
+	// figure out endpoint type
+	endpointType := "DNS"
+	if net.ParseIP(input.ControlPlaneEndpoint) != nil {
+		endpointType = "IP"
+	}
+
+	// figure out snap channel from KubernetesVersion
+	// TODO: support specifying the snap channel
+	kubernetesVersion, err := version.ParseSemantic(input.KubernetesVersion)
 	if err != nil {
-		return nil, err
-	}
-	input.Version = generateSnapChannelArgument(major, minor)
-
-	input.ControlPlaneEndpointType = "DNS"
-	addr := net.ParseIP(input.ControlPlaneEndpoint)
-	if addr != nil {
-		input.ControlPlaneEndpointType = "IP"
+		return nil, fmt.Errorf("kubernetes version %q is not a semantic version: %w", input.KubernetesVersion, err)
 	}
 
-	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
-	cloudinitStr := strings.Replace(controlPlaneJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
+	cloudConfig := NewBaseCloudConfig()
 
-	ipinipCommands := generateIPinIPCommands(input.IPinIP)
-	cloudinitStr = strings.Replace(cloudinitStr, "{{.IPinIPSection}}", ipinipCommands, -1)
+	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
+		"set -x",
+		scriptPath(disableHostServicesScript),
+		fmt.Sprintf("%s %d.%d", scriptPath(installMicroK8sScript), kubernetesVersion.Major(), kubernetesVersion.Minor()),
+		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),
+		"microk8s status --wait-ready",
+		fmt.Sprintf("%s %v", scriptPath(configureCalicoIPIPScript), input.IPinIP),
+		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
+		fmt.Sprintf("%s %q", scriptPath(configureDqlitePortScript), input.DqlitePort),
+		"microk8s status --wait-ready",
+		fmt.Sprintf("%s %q", scriptPath(microk8sJoinScript), fmt.Sprintf("%s:%s/%s", input.JoinNodeIP, input.ClusterAgentPort, input.Token)),
+		fmt.Sprintf("%s %q %q", scriptPath(configureAPIServerScript), endpointType, input.ControlPlaneEndpoint),
+		fmt.Sprintf("microk8s add-node --token-ttl %v --token %q", input.TokenTTL, input.Token),
+	)
 
-	userData, err := generate("JoinControlplane", cloudinitStr, input)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to generate user data for machine joining control plane")
-	}
-
-	return userData, err
+	return cloudConfig, nil
 }

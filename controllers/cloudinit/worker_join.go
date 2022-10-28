@@ -5,7 +5,7 @@ Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
 You may obtain a copy of the License at
 
-	http://www.apache.org/licenses/LICENSE-2.0
+    http://www.apache.org/licenses/LICENSE-2.0
 
 Unless required by applicable law or agreed to in writing, software
 distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,73 +13,57 @@ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 See the License for the specific language governing permissions and
 limitations under the License.
 */
+
 package cloudinit
 
 import (
-	"strings"
+	"fmt"
 
-	"github.com/pkg/errors"
+	"k8s.io/apimachinery/pkg/util/version"
 )
 
-const (
-	workerJoinCloudInit = `{{.Header}}
-runcmd:
-- sudo echo IPOfNodeToJoin {{.IPOfNodeToJoin}}
-- sudo echo PortOfNodeToJoin {{.PortOfNodeToJoin}}
-- sudo echo Version {{.Version}}
-- sudo systemctl stop kubelet || true
-- sudo systemctl disable kubelet || true
-- sudo systemctl stop containerd || true
-- sudo systemctl disable containerd || true
-- sudo sh -c "while ! snap install microk8s --classic {{.Version}} ; do sleep 10 ; echo 'Retry snap installation'; done"
-- sudo microk8s status --wait-ready
-- sudo echo "Stopping"
-- sudo microk8s stop
-- sudo sleep 20
-{{.ProxySection}}
-- sudo sed -i 's/25000/{{.PortOfNodeToJoin}}/' /var/snap/microk8s/current/args/cluster-agent
-- sudo echo "Starting"
-- sudo microk8s start
-- sudo sleep 20
-- sudo microk8s status --wait-ready
-- sudo echo "Joining"
-- sudo echo "Will join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}"
-- sudo sh -c "while ! microk8s join {{.IPOfNodeToJoin}}:{{.PortOfNodeToJoin}}/{{.JoinToken}} --worker ; do sleep 10 ; echo 'Retry join'; done"
-- sudo  sed -i '/.*address:.*/d' /var/snap/microk8s/current/args/traefik/provider.yaml
-- |
-  sudo echo "        - address: {{.ControlPlaneEndpoint}}:6443" >> /var/snap/microk8s/current/args/traefik/provider.yaml
-`
-)
-
-// WorkerJoinInput defines context to generate instance user data for worker nodes to join.
-type WorkerJoinInput struct {
-	BaseUserData
-	JoinToken            string
-	IPOfNodeToJoin       string
-	PortOfNodeToJoin     string
-	Version              string
-	ControlPlaneEndpoint string
-	HTTPSProxy           *string
-	HTTPProxy            *string
-	NoProxy              *string
+// WorkerInput defines the context needed to generate a worker instance to join a cluster.
+type WorkerInput struct {
+	// Token is the token that will be used for joining other nodes to the cluster.
+	Token string
+	// KubernetesVersion is the Kubernetes version we want to install.
+	KubernetesVersion string
+	// ClusterAgentPort is the port that cluster-agent binds to.
+	ClusterAgentPort string
+	// ContainerdHTTPProxy is http_proxy configuration for containerd.
+	ContainerdHTTPProxy string
+	// ContainerdHTTPSProxy is https_proxy configuration for containerd.
+	ContainerdHTTPSProxy string
+	// ContainerdNoProxy is no_proxy configuration for containerd.
+	ContainerdNoProxy string
+	// JoinNodeIP is the IP address of the node to join
+	JoinNodeIP string
 }
 
-// NewJoinWorker returns the user data string to be used on a new worker instance.
-func NewJoinWorker(input *WorkerJoinInput) ([]byte, error) {
-	input.Header = cloudConfigHeader
-	major, minor, err := extractVersionParts(input.Version)
-	if err != nil {
-		return nil, err
-	}
-	input.Version = generateSnapChannelArgument(major, minor)
-
-	proxyCommands := generateProxyCommands(input.HTTPSProxy, input.HTTPProxy, input.NoProxy)
-	cloudinitStr := strings.Replace(workerJoinCloudInit, "{{.ProxySection}}", proxyCommands, -1)
-
-	userData, err := generate("JoinWorker", cloudinitStr, input)
-	if err != nil {
-		return nil, errors.Wrapf(err, "failed to generate user data for machine joining as worker")
+func NewJoinWorker(input *WorkerInput) (*CloudConfig, error) {
+	// ensure token is valid
+	if len(input.Token) != 32 {
+		return nil, fmt.Errorf("join token %q is invalid; length must be 32 characters", input.Token)
 	}
 
-	return userData, err
+	// figure out snap channel from KubernetesVersion
+	// TODO: support specifying the snap channel
+	kubernetesVersion, err := version.ParseSemantic(input.KubernetesVersion)
+	if err != nil {
+		return nil, fmt.Errorf("kubernetes version %q is not a semantic version: %w", input.KubernetesVersion, err)
+	}
+
+	cloudConfig := NewBaseCloudConfig()
+
+	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
+		"set -x",
+		scriptPath(disableHostServicesScript),
+		fmt.Sprintf("%s %d.%d", scriptPath(installMicroK8sScript), kubernetesVersion.Major(), kubernetesVersion.Minor()),
+		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),
+		"microk8s status --wait-ready",
+		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
+		fmt.Sprintf("%s %q --worker", scriptPath(microk8sJoinScript), fmt.Sprintf("%s:%s/%s", input.JoinNodeIP, input.ClusterAgentPort, input.Token)),
+	)
+
+	return cloudConfig, nil
 }

@@ -288,30 +288,23 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		portOfDqlite = remappedDqlitePort
 	}
 
-	controlPlaneInput := &cloudinit.ControlPlaneInput{
-		BaseUserData:         cloudinit.BaseUserData{},
+	controlPlaneInput := &cloudinit.ControlPlaneInitInput{
 		CACert:               *cert,
 		CAKey:                *key,
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
-		JoinToken:            token,
-		JoinTokenTTLInSecs:   microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
-		Version:              *machine.Spec.Version,
-		PortOfClusterAgent:   portOfClusterAgent,
-		PortOfDqlite:         portOfDqlite,
+		Token:                token,
+		TokenTTL:             microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
+		KubernetesVersion:    *machine.Spec.Version,
+		ClusterAgentPort:     portOfClusterAgent,
+		DqlitePort:           portOfDqlite,
+		Addons:               microk8sConfig.Spec.InitConfiguration.Addons,
+		IPinIP:               microk8sConfig.Spec.InitConfiguration.IPinIP,
+		ContainerdHTTPProxy:  microk8sConfig.Spec.InitConfiguration.HTTPProxy,
+		ContainerdHTTPSProxy: microk8sConfig.Spec.InitConfiguration.HTTPSProxy,
+		ContainerdNoProxy:    microk8sConfig.Spec.InitConfiguration.NoProxy,
 	}
-	if microk8sConfig.Spec.InitConfiguration != nil {
-		if microk8sConfig.Spec.InitConfiguration.Addons != nil {
-			controlPlaneInput.Addons = microk8sConfig.Spec.InitConfiguration.Addons
-		}
-		controlPlaneInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
-		controlPlaneInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
-		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
-		controlPlaneInput.IPinIP = microk8sConfig.Spec.InitConfiguration.IPinIP
-
-		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
-			// set by default to 10 years
-			controlPlaneInput.JoinTokenTTLInSecs = 315569260
-		}
+	if controlPlaneInput.TokenTTL == 0 {
+		controlPlaneInput.TokenTTL = 315569260
 	}
 
 	bootstrapInitData, err := cloudinit.NewInitControlPlane(controlPlaneInput)
@@ -321,7 +314,13 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		return ctrl.Result{}, err
 	}
 
-	if err := r.storeBootstrapData(ctx, scope, bootstrapInitData); err != nil {
+	b, err := cloudinit.GenerateCloudConfig(bootstrapInitData)
+	if err != nil {
+		scope.Error(err, "Failed to render user data for bootstrap control plane")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.storeBootstrapData(ctx, scope, b); err != nil {
 		scope.Error(err, "Failed to store bootstrap data")
 		return ctrl.Result{}, err
 	}
@@ -384,35 +383,34 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 	}
 
 	controlPlaneInput := &cloudinit.ControlPlaneJoinInput{
-		BaseUserData:         cloudinit.BaseUserData{},
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
-		JoinToken:            token,
-		JoinTokenTTLInSecs:   microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
-		PortOfNodeToJoin:     portOfNodeToConnectTo,
-		PortOfDqlite:         portOfDqlite,
-		IPOfNodeToJoin:       ipOfNodeToConnectTo,
-		Version:              *machine.Spec.Version,
+		Token:                token,
+		TokenTTL:             microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
+		JoinNodeIP:           ipOfNodeToConnectTo,
+		KubernetesVersion:    *machine.Spec.Version,
+		ClusterAgentPort:     portOfNodeToConnectTo,
+		DqlitePort:           portOfDqlite,
+		IPinIP:               microk8sConfig.Spec.InitConfiguration.IPinIP,
+		ContainerdHTTPProxy:  microk8sConfig.Spec.InitConfiguration.HTTPProxy,
+		ContainerdHTTPSProxy: microk8sConfig.Spec.InitConfiguration.HTTPSProxy,
+		ContainerdNoProxy:    microk8sConfig.Spec.InitConfiguration.NoProxy,
 	}
-	if microk8sConfig.Spec.InitConfiguration != nil {
-		controlPlaneInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
-		controlPlaneInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
-		controlPlaneInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
-		controlPlaneInput.IPinIP = microk8sConfig.Spec.InitConfiguration.IPinIP
-
-		if microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs == 0 {
-			// set by default to 10 years
-			controlPlaneInput.JoinTokenTTLInSecs = 315569260
-		}
+	if controlPlaneInput.TokenTTL == 0 {
+		controlPlaneInput.TokenTTL = 315569260
 	}
-
 	bootstrapInitData, err := cloudinit.NewJoinControlPlane(controlPlaneInput)
-
 	if err != nil {
-		scope.Error(err, "Failed to generate user data for bootstrap control plane")
+		scope.Error(err, "Failed to generate user data for joining control plane")
 		return ctrl.Result{}, err
 	}
 
-	if err := r.storeBootstrapData(ctx, scope, bootstrapInitData); err != nil {
+	b, err := cloudinit.GenerateCloudConfig(bootstrapInitData)
+	if err != nil {
+		scope.Error(err, "Failed to render user data for joining control plane")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.storeBootstrapData(ctx, scope, b); err != nil {
 		scope.Error(err, "Failed to store bootstrap data")
 		return ctrl.Result{}, err
 	}
@@ -473,29 +471,31 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
-	workerInput := &cloudinit.WorkerJoinInput{
-		BaseUserData:         cloudinit.BaseUserData{},
-		JoinToken:            token,
-		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
-		PortOfNodeToJoin:     portOfNodeToConnectTo,
-		IPOfNodeToJoin:       ipOfNodeToConnectTo,
-		Version:              *machine.Spec.Version,
+	workerInput := &cloudinit.WorkerInput{
+		Token:             token,
+		KubernetesVersion: *machine.Spec.Version,
+		ClusterAgentPort:  portOfNodeToConnectTo,
+		JoinNodeIP:        ipOfNodeToConnectTo,
 	}
 
-	if microk8sConfig.Spec.InitConfiguration != nil {
-		workerInput.HTTPSProxy = microk8sConfig.Spec.InitConfiguration.HTTPSProxy
-		workerInput.HTTPProxy = microk8sConfig.Spec.InitConfiguration.HTTPProxy
-		workerInput.NoProxy = microk8sConfig.Spec.InitConfiguration.NoProxy
+	if c := microk8sConfig.Spec.InitConfiguration; c != nil {
+		workerInput.ContainerdHTTPSProxy = c.HTTPSProxy
+		workerInput.ContainerdHTTPProxy = c.HTTPProxy
+		workerInput.ContainerdNoProxy = c.NoProxy
 	}
-
 	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)
-
 	if err != nil {
-		scope.Error(err, "Failed to generate user data for bootstrap control plane")
+		scope.Error(err, "Failed to generate user data for joining worker node")
 		return ctrl.Result{}, err
 	}
 
-	if err := r.storeBootstrapData(ctx, scope, bootstrapInitData); err != nil {
+	b, err := cloudinit.GenerateCloudConfig(bootstrapInitData)
+	if err != nil {
+		scope.Error(err, "Failed to render user data for joining worker node")
+		return ctrl.Result{}, err
+	}
+
+	if err := r.storeBootstrapData(ctx, scope, b); err != nil {
 		scope.Error(err, "Failed to store bootstrap data")
 		return ctrl.Result{}, err
 	}

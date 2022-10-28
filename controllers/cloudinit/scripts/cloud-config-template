@@ -1,0 +1,3 @@
+## template: jinja
+#cloud-config
+{{ . | ToYAML -}}
