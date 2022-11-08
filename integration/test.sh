@@ -25,9 +25,6 @@ function cleanup() {
 }
 trap cleanup EXIT
 
-# have AWS infrastructure provider logs running
-kubectl logs -n capa-system deploy/capa-controller-manager -f &
-
 # deploy cluster
 kubectl apply -f ${CLUSTER_MANIFEST_FILE}
 
@@ -44,7 +41,7 @@ cat ./kubeconfig
 
 # wait for nodes to come up
 while ! kubectl --kubeconfig=./kubeconfig get node | grep "Ready" | wc -l | grep 6; do
-    kubectl get cluster,machines,awscluster,awsmachines || true
+    kubectl get cluster,machines || true
     kubectl --kubeconfig=./kubeconfig get node,pod -A || true
 
     echo waiting for 6 nodes to become ready
