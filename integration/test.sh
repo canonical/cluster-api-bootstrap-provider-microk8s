@@ -2,8 +2,11 @@
 
 set -ex
 
-_DIR="${BASH_SOURCE%/*}"
-if [[ ! -d "$_DIR" ]]; then _DIR="$PWD"; fi
+if [[ -z "${CLUSTER_MANIFEST_FILE}" ]]; then
+    echo "Environemnt variable CLUSTER_MANIFEST_FILE is not set."
+    echo "CLUSTER_MANIFEST_FILE is expected to hold the PATH to a cluster manifest."
+    exit 1
+fi
 
 while ! kubectl wait --for=condition=available deploy/capi-microk8s-bootstrap-controller-manager -n capi-microk8s-bootstrap-system; do
     echo "Waiting for bootstrap controller to come up"
@@ -16,17 +19,6 @@ done
 
 echo "Deploy a test cluster"
 
-# generate cluster
-export AWS_REGION=us-east-1
-export AWS_SSH_KEY_NAME=capi
-export CONTROL_PLANE_MACHINE_COUNT=3
-export WORKER_MACHINE_COUNT=3
-export AWS_CREATE_BASTION=false
-export AWS_PUBLIC_IP=false
-export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
-export AWS_NODE_MACHINE_FLAVOR=t3.large
-clusterctl generate cluster test-ci-cluster --from "${_DIR}/../templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
-
 function cleanup() {
     set +e
     kubectl delete cluster test-ci-cluster
@@ -37,7 +29,7 @@ trap cleanup EXIT
 kubectl logs -n capa-system deploy/capa-controller-manager -f &
 
 # deploy cluster
-kubectl apply -f cluster.yaml
+kubectl apply -f ${CLUSTER_MANIFEST_FILE}
 
 # get cluster kubeconfig
 while ! clusterctl get kubeconfig test-ci-cluster > ./kubeconfig; do
