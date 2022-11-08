@@ -1,0 +1,143 @@
+# Based on: https://github.com/kubernetes-sigs/cluster-api-provider-azure/releases/download/v1.5.3/cluster-template.yaml
+
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: AzureCluster
+    name: ${CLUSTER_NAME}
+  controlPlaneRef:
+    kind: MicroK8sControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    name: ${CLUSTER_NAME}-control-plane
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureCluster
+metadata:
+  name: ${CLUSTER_NAME}
+  namespace: default
+spec:
+  identityRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: AzureClusterIdentity
+    name: ${CLUSTER_IDENTITY_NAME}
+  location: ${AZURE_LOCATION}
+  networkSpec:
+    subnets:
+    - name: control-plane-subnet
+      role: control-plane
+    - name: node-subnet
+      natGateway:
+        name: node-natgateway
+      role: node
+    vnet:
+      name: ${AZURE_VNET_NAME:=${CLUSTER_NAME}-vnet}
+  resourceGroup: ${AZURE_RESOURCE_GROUP:=${CLUSTER_NAME}}
+  subscriptionID: ${AZURE_SUBSCRIPTION_ID}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: MicroK8sControlPlane
+metadata:
+  name: "${CLUSTER_NAME}-control-plane"
+spec:
+  controlPlaneConfig:
+    initConfiguration:
+      joinTokenTTLInSecs: 9000
+      IPinIP: true
+      addons:
+        - dns
+        - ingress
+    clusterConfiguration:
+      portCompatibilityRemap: true
+  machineTemplate:
+    infrastructureTemplate:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: AzureMachineTemplate
+      name: "${CLUSTER_NAME}-control-plane"
+  replicas: ${CONTROL_PLANE_MACHINE_COUNT:=1}
+  version: "v${KUBERNETES_VERSION}"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureMachineTemplate
+metadata:
+  name: ${CLUSTER_NAME}-control-plane
+  namespace: default
+spec:
+  template:
+    spec:
+      dataDisks:
+      - diskSizeGB: 256
+        lun: 0
+        nameSuffix: etcddisk
+      osDisk:
+        diskSizeGB: 128
+        osType: Linux
+      sshPublicKey: ${AZURE_SSH_PUBLIC_KEY_B64:=""}
+      vmSize: ${AZURE_CONTROL_PLANE_MACHINE_TYPE}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: ${CLUSTER_NAME}-md-0
+  namespace: default
+spec:
+  clusterName: ${CLUSTER_NAME}
+  replicas: ${WORKER_MACHINE_COUNT:=1}
+  selector:
+    matchLabels: null
+  template:
+    spec:
+      bootstrap:
+        configRef:
+          name: "${CLUSTER_NAME}-md-0"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: MicroK8sConfigTemplate
+      clusterName: ${CLUSTER_NAME}
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: AzureMachineTemplate
+        name: ${CLUSTER_NAME}-md-0
+      version: ${KUBERNETES_VERSION}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureMachineTemplate
+metadata:
+  name: ${CLUSTER_NAME}-md-0
+  namespace: default
+spec:
+  template:
+    spec:
+      osDisk:
+        diskSizeGB: 128
+        osType: Linux
+      sshPublicKey: ${AZURE_SSH_PUBLIC_KEY_B64:=""}
+      vmSize: ${AZURE_NODE_MACHINE_TYPE}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: MicroK8sConfigTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  template:
+    spec:
+      clusterConfiguration:
+        portCompatibilityRemap: true
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: AzureClusterIdentity
+metadata:
+  labels:
+    clusterctl.cluster.x-k8s.io/move-hierarchy: "true"
+  name: ${CLUSTER_IDENTITY_NAME}
+  namespace: default
+spec:
+  allowedNamespaces: {}
+  clientID: ${AZURE_CLIENT_ID}
+  clientSecret:
+    name: ${AZURE_CLUSTER_IDENTITY_SECRET_NAME}
+    namespace: ${AZURE_CLUSTER_IDENTITY_SECRET_NAMESPACE}
+  tenantID: ${AZURE_TENANT_ID}
+  type: ServicePrincipal 
