@@ -152,6 +152,34 @@ secret "microk8s-aws-kubeconfig" deleted
 
 > *NOTE*: Ensure that you have properly deployed the OpenStack infrastructure provider prior to executing the commands below. See [Initialization for common providers](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers)
 
+Create a cloud-config secret for the OpenStack API in the management cluster with the following command. Make sure to replace the OpenStack credentials in the command below to match your OpenStack cloud. If unsure, consult "Horizon" > "API Access" > "Download OpenStack RC File" > "OpenStack clouds.yaml File".
+
+```bash
+sudo microk8s kubectl create -f - <<EOF
+apiVersion: v1
+kind: Secret
+metadata:
+  name: cloud-config
+  labels:
+    clusterctl.cluster.x-k8s.io/move: "true"
+stringData:
+  cacert: ''
+  clouds.yaml: |
+    clouds:
+      openstack:
+        auth:
+          auth_url: "${OS_AUTH_URL}"
+          username: "${OS_USERNAME}"
+          password: "${OS_PASSWORD}"
+          project_name: "${OS_PROJECT_NAME}"
+          user_domain_name: "${OS_USER_DOMAIN_NAME}"
+        region_name: "${OS_REGION_NAME}"
+        interface: "public"
+        verify: false
+        identity_api_version: 3
+EOF
+```
+
 Generate a cluster template with:
 
 ```bash

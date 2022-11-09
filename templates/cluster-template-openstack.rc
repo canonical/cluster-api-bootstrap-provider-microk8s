@@ -3,26 +3,9 @@ export KUBERNETES_VERSION=1.24.0
 export CONTROL_PLANE_MACHINE_COUNT=1
 export WORKER_MACHINE_COUNT=1
 
-# OpenStack credentials configuration
-# If unsure, consult "Horizon" > "API Access" > "Download OpenStack RC File" > "OpenStack clouds.yaml File"
+# OpenStack credentials configuration. No changes needed if you followed the README.
 export OPENSTACK_CLOUD=openstack
-export OPENSTACK_CLOUD_CACERT_B64="Cg=="
-export OPENSTACK_CLOUD_YAML_B64="$(echo '
-clouds:
-  openstack:
-    auth:
-      auth_url: "<OS_AUTH_URL>"
-      username: "<OS_USERNAME>"
-      password: "<OS_PASSWORD>"
-      project_id: "<OS_PROJECT_ID>"
-      project_name: "<OS_PROJECT_NAME>"
-      user_domain_name: "<OS_USER_DOMAIN_NAME>"
-    region_name: "<OS_REGION_NAME>"
-    interface: "public"
-    verify: false
-    identity_api_version: 3
-' | base64 -w0
-)"
+export OPENSTACK_CLOUD_CONFIG_SECRET_NAME=cloud-config
 
 # OpenStack region and network configuration. External network ID is only needed if multiple external networks exist.
 export OPENSTACK_EXTERNAL_NETWORK_ID=""
@@ -30,6 +13,6 @@ export OPENSTACK_FAILURE_DOMAIN="nova"
 
 # OpenStack machine conifugration
 export OPENSTACK_IMAGE_NAME=ubuntu-20.04
-export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR=m1.large
-export OPENSTACK_NODE_MACHINE_FLAVOR=m1.large
-export OPENSTACK_SSH_KEY_NAME=neo
+export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR=m1.medium
+export OPENSTACK_NODE_MACHINE_FLAVOR=m1.medium
+export OPENSTACK_SSH_KEY_NAME=my-ssh-key
