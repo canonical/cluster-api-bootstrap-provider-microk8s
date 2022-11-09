@@ -16,3 +16,8 @@ export OPENSTACK_IMAGE_NAME=ubuntu-20.04
 export OPENSTACK_CONTROL_PLANE_MACHINE_FLAVOR=m1.medium
 export OPENSTACK_NODE_MACHINE_FLAVOR=m1.medium
 export OPENSTACK_SSH_KEY_NAME=my-ssh-key
+
+# (optional) Containerd HTTP proxy configuration. Leave empty if not required.
+export CONTAINERD_HTTP_PROXY=""
+export CONTAINERD_HTTPS_PROXY=""
+export CONTAINERD_NO_PROXY=""

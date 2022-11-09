@@ -43,6 +43,9 @@ spec:
       addons:
         - dns
         - ingress
+      httpProxy: "${CONTAINERD_HTTP_PROXY:=}"
+      httpsProxy: "${CONTAINERD_HTTPS_PROXY:=}"
+      noProxy: "${CONTAINERD_NO_PROXY:=}"
     clusterConfiguration:
       portCompatibilityRemap: true
   machineTemplate:
@@ -116,3 +119,7 @@ spec:
     spec:
       clusterConfiguration:
         portCompatibilityRemap: true
+      initConfiguration:
+        httpProxy: "${CONTAINERD_HTTP_PROXY:=}"
+        httpsProxy: "${CONTAINERD_HTTPS_PROXY:=}"
+        noProxy: "${CONTAINERD_NO_PROXY:=}"
