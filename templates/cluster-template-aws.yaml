@@ -31,7 +31,7 @@ metadata:
 spec:
   controlPlaneConfig:
     initConfiguration:
-      joinTokenTTLInSecs: 9000
+      joinTokenTTLInSecs: 900000
       IPinIP: true
       addons:
         - dns
