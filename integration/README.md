@@ -80,10 +80,10 @@ sed "s,docker.io/cdkbot/capi-control-plane-provider-microk8s:latest,docker.io/<u
 kubectl apply -f bootstrap/bootstrap-components.yaml -f control-plane/control-plane-components.yaml
 ```
 
-#### Execute `test.sh`
+#### Trigger the e2e tests
 
 ```bash
-bash ./bootstrap/integration/test.sh
+make e2e
 ```
 
 #### Remove the test runs
