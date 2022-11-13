@@ -46,7 +46,6 @@ spec:
   controlPlaneConfig:
     initConfiguration:
       joinTokenTTLInSecs: 9000
-      IPinIP: true
       addons:
         - dns
         - ingress
@@ -69,9 +68,6 @@ spec:
   template:
     spec:
       dataDisks:
-      - diskSizeGB: 256
-        lun: 0
-        nameSuffix: etcddisk
       osDisk:
         diskSizeGB: 128
         osType: Linux
@@ -134,10 +130,12 @@ metadata:
   name: ${CLUSTER_IDENTITY_NAME}
   namespace: default
 spec:
-  allowedNamespaces: {}
+  type: ServicePrincipal
   clientID: ${AZURE_CLIENT_ID}
   clientSecret:
     name: ${AZURE_CLUSTER_IDENTITY_SECRET_NAME}
     namespace: ${AZURE_CLUSTER_IDENTITY_SECRET_NAMESPACE}
   tenantID: ${AZURE_TENANT_ID}
-  type: ServicePrincipal 
+  allowedNamespaces:
+    list:
+      - default

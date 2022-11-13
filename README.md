@@ -199,6 +199,32 @@ Then deploy the cluster with:
 microk8s kubectl apply -f cluster-openstack.yaml
 ```
 
+#### Azure
+
+> *NOTE*: Ensure that you have properly deployed the Azure infrastructure provider prior to executing the commands below. See [Initialization for common providers](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers)
+
+
+Generate a cluster template with:
+
+```bash
+# review list of variables needed for the cluster template
+clusterctl generate cluster microk8s-azure --from ./templates/cluster-template-azure.yaml --list-variables
+
+# set environment variables (edit the file as needed before sourcing it)
+source ./templates/cluster-template-azure.rc
+
+# generate cluster
+clusterctl generate cluster microk8s-azure --from ./templates/cluster-template-azure.yaml > cluster-azure.yaml
+```
+
+Then deploy the cluster with:
+
+```bash
+microk8s kubectl apply -f cluster-azure.yaml
+```
+
+**Note:** Make sure you have the secret to include the password of the Service Principal identity. This secret will be referenced by the AzureClusterIdentity used by the AzureCluster.
+
 ## Development
 
 The two MicroK8s CAPI providers, the bootstrap and control plane, serve distinct purposes:
