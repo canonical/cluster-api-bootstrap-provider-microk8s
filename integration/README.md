@@ -29,4 +29,65 @@ The integration/e2e tests have the following prerequisites:
 
 ### Running the tests
 
-Just execute the `test.sh`.
+For local testing, make sure your have the above prerequisites.
+
+#### Checkout to the branch of code you want to test on:
+
+```bash
+git clone https://github.com/canonical/cluster-api-bootstrap-provider-microk8s bootstrap -b "<branch-name>"
+git clone https://github.com/canonical/cluster-api-control-plane-provider-microk8s control-plane -b "<branch-name>"
+```
+
+#### Install microk8s and enable the addons
+
+```bash
+snap install microk8s --channel latest/beta --classic
+microk8s status --wait-ready
+microk8s enable rbac dns
+mkdir ~/.kube -p
+microk8s config > ~/.kube/config
+```
+
+#### Initialize infrastructure provider
+
+Visit [here](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers) for a list of common infrasturture providers.
+
+```bash
+  clusterctl init --infrastructure <infra> --bootstrap - --control-plane -
+```
+
+#### Build Docker images and release manifests from the checked out source code
+
+Build and push a docker image for the bootstrap provider.
+```bash
+cd bootstrap
+docker build -t <username>/capi-bootstrap-provider-microk8s:<tag> .
+docker push <username>capi-bootstrap-provider-microk8s:<tag>
+sed "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,docker.io/<username>/capi-bootstrap-provider-microk8s:<tag>," -i bootstrap-components.yaml
+```
+
+Similarly for control-plane provider
+```bash
+cd control-plane
+docker build -t <username>/capi-control-plane-provider-microk8s:<tag> .
+docker push <username>/capi-control-plane-provider-microk8s:<tag>
+sed "s,docker.io/cdkbot/capi-control-plane-provider-microk8s:latest,docker.io/<username>/capi-control-plane-provider-microk8s:<tag>," -i control-plane-components.yaml
+```
+
+#### Deploy microk8s providers
+
+```bash
+kubectl apply -f bootstrap/bootstrap-components.yaml -f control-plane/control-plane-components.yaml
+```
+
+#### Execute `test.sh`
+
+```bash
+bash ./bootstrap/integration/test.sh
+```
+
+#### Remove the test runs
+
+```bash
+microk8s kubectl delete cluster --all --timeout=10s || true
+```
