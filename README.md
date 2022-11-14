@@ -223,7 +223,7 @@ Then deploy the cluster with:
 microk8s kubectl apply -f cluster-azure.yaml
 ```
 
-**Note:** Make sure you have the secret to include the password of the Service Principal identity. This secret will be referenced by the AzureClusterIdentity used by the AzureCluster.
+> **Note**: Make sure you have the secret to include the password of the Service Principal identity. This secret will be referenced by the AzureClusterIdentity used by the AzureCluster.
 
 ## Development
 
