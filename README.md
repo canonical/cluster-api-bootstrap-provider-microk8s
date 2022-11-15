@@ -203,7 +203,6 @@ microk8s kubectl apply -f cluster-openstack.yaml
 
 > *NOTE*: Ensure that you have properly deployed the Azure infrastructure provider prior to executing the commands below. See [Initialization for common providers](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers)
 
-
 Generate a cluster template with:
 
 ```bash
