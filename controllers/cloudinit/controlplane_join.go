@@ -47,6 +47,8 @@ type ControlPlaneJoinInput struct {
 	IPinIP bool
 	// JoinNodeIP is the IP address of the node to join
 	JoinNodeIP string
+	// Confinement specifies a classic or strict deployment of microk8s snap
+	Confinement string
 }
 
 func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
@@ -76,7 +78,7 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
 		"set -x",
 		scriptPath(disableHostServicesScript),
-		fmt.Sprintf("%s %d.%d", scriptPath(installMicroK8sScript), kubernetesVersion.Major(), kubernetesVersion.Minor()),
+		fmt.Sprintf("%s %d.%d %s", scriptPath(installMicroK8sScript), kubernetesVersion.Major(), kubernetesVersion.Minor(), input.Confinement),
 		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),
 		"microk8s status --wait-ready",
 		fmt.Sprintf("%s %v", scriptPath(configureCalicoIPIPScript), input.IPinIP),

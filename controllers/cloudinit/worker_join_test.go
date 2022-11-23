@@ -39,7 +39,35 @@ func TestWorkerJoin(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh 1.24`,
+			`/capi-scripts/00-install-microk8s.sh 1.24 `,
+			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
+			`microk8s status --wait-ready`,
+			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,
+			`/capi-scripts/20-microk8s-join.sh "10.0.3.194:30000/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" --worker`,
+		}))
+
+		_, err = cloudinit.GenerateCloudConfig(cloudConfig)
+		g.Expect(err).ToNot(HaveOccurred())
+	})
+}
+
+func TestConfinementWorkerJoin(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		g := NewWithT(t)
+
+		cloudConfig, err := cloudinit.NewJoinWorker(&cloudinit.WorkerInput{
+			KubernetesVersion: "v1.24.3",
+			ClusterAgentPort:  "30000",
+			Token:             strings.Repeat("a", 32),
+			JoinNodeIP:        "10.0.3.194",
+			Confinement:       "strict",
+		})
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
+			`set -x`,
+			`/capi-scripts/00-disable-host-services.sh`,
+			`/capi-scripts/00-install-microk8s.sh 1.24 strict`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,

@@ -18,7 +18,6 @@ package cloudinit
 
 import (
 	"embed"
-	_ "embed"
 	"fmt"
 	"path/filepath"
 )
