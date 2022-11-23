@@ -44,7 +44,7 @@ func TestControlPlaneInit(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh 1.25 `,
+			`/capi-scripts/00-install-microk8s.sh "1.25 --classic"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`microk8s refresh-certs /var/tmp`,
@@ -97,7 +97,7 @@ func TestControlPlaneConfinementInit(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh 1.25 strict`,
+			`/capi-scripts/00-install-microk8s.sh "1.25-strict"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`microk8s refresh-certs /var/tmp`,

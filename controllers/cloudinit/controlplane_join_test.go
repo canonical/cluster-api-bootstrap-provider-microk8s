@@ -43,7 +43,7 @@ func TestControlPlaneJoin(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh 1.25 `,
+			`/capi-scripts/00-install-microk8s.sh "1.25 --classic"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-calico-ipip.sh true`,
@@ -80,7 +80,7 @@ func TestConfinementControlPlaneJoin(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh 1.25 strict`,
+			`/capi-scripts/00-install-microk8s.sh "1.25-strict"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-calico-ipip.sh true`,

@@ -73,12 +73,18 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 		return nil, fmt.Errorf("kubernetes version %q is not a semantic version: %w", input.KubernetesVersion, err)
 	}
 
+	// strict confinement is only available for microk8s v1.25+
+	if input.Confinement == "strict" && kubernetesVersion.Minor() < 25 {
+		return nil, fmt.Errorf("strict confinement is only available for microk8s v1.25+")
+	}
+	installArgs := createInstallArgs(input.Confinement, kubernetesVersion)
+
 	cloudConfig := NewBaseCloudConfig()
 
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
 		"set -x",
 		scriptPath(disableHostServicesScript),
-		fmt.Sprintf("%s %d.%d %s", scriptPath(installMicroK8sScript), kubernetesVersion.Major(), kubernetesVersion.Minor(), input.Confinement),
+		fmt.Sprintf("%s %q", scriptPath(installMicroK8sScript), installArgs),
 		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),
 		"microk8s status --wait-ready",
 		fmt.Sprintf("%s %v", scriptPath(configureCalicoIPIPScript), input.IPinIP),
