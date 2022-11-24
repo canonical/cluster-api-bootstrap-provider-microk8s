@@ -67,6 +67,12 @@ spec:
                         type: object
                       initConfiguration:
                         properties:
+                          Confinement:
+                            description: The confinement (strict or classic) configuration
+                            enum:
+                            - classic
+                            - strict
+                            type: string
                           IPinIP:
                             description: The optional IPinIP configuration
                             type: boolean
