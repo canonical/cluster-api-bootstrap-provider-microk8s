@@ -39,7 +39,7 @@ func TestWorkerJoin(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh "1.24 --classic"`,
+			`/capi-scripts/00-install-microk8s.sh "--channel 1.24 --classic"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,
@@ -67,7 +67,7 @@ func TestConfinementWorkerJoin(t *testing.T) {
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
 			`/capi-scripts/00-disable-host-services.sh`,
-			`/capi-scripts/00-install-microk8s.sh "1.25-strict"`,
+			`/capi-scripts/00-install-microk8s.sh "--channel 1.25-strict"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,

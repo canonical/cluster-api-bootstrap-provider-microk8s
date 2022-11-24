@@ -36,9 +36,9 @@ type WorkerInput struct {
 	ContainerdHTTPSProxy string
 	// ContainerdNoProxy is no_proxy configuration for containerd.
 	ContainerdNoProxy string
-	// JoinNodeIP is the IP address of the node to join
+	// JoinNodeIP is the IP address of the node to join.
 	JoinNodeIP string
-	// Confinement specifies a classic or strict deployment of microk8s snap
+	// Confinement specifies a classic or strict deployment of microk8s snap.
 	Confinement string
 }
 

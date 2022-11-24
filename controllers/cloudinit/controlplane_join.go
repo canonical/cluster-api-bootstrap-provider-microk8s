@@ -45,9 +45,9 @@ type ControlPlaneJoinInput struct {
 	ContainerdNoProxy string
 	// IPinIP defines whether Calico will use IPinIP mode for cluster networking.
 	IPinIP bool
-	// JoinNodeIP is the IP address of the node to join
+	// JoinNodeIP is the IP address of the node to join.
 	JoinNodeIP string
-	// Confinement specifies a classic or strict deployment of microk8s snap
+	// Confinement specifies a classic or strict deployment of microk8s snap.
 	Confinement string
 }
 

@@ -72,6 +72,7 @@ type InitConfiguration struct {
 
 	// The confinement (strict or classic) configuration
 	// +optional
+	// +kubebuilder:validation:Enum=classic;strict
 	Confinement string `json:"Confinement,omitempty"`
 }
 

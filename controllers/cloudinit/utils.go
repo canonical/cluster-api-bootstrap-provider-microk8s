@@ -18,20 +18,17 @@ package cloudinit
 
 import (
 	"fmt"
-	"strconv"
 
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
 func createInstallArgs(confinement string, kubernetesVersion *version.Version) string {
-	kubernetesMajorVersion := strconv.FormatUint(uint64(kubernetesVersion.Major()), 10)
-	kubernetesMinorVersion := strconv.FormatUint(uint64(kubernetesVersion.Minor()), 10)
-	installChannel := fmt.Sprintf("%s.%s", kubernetesMajorVersion, kubernetesMinorVersion)
+	installChannel := fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor())
 	var installArgs string
 	if confinement == "strict" {
-		installArgs = fmt.Sprintf("%s-strict", installChannel)
+		installArgs = fmt.Sprintf("--channel %s-strict", installChannel)
 	} else {
-		installArgs = fmt.Sprintf("%s --classic", installChannel)
+		installArgs = fmt.Sprintf("--channel %s --classic", installChannel)
 	}
 
 	return installArgs

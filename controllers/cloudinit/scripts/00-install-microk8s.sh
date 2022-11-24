@@ -6,7 +6,7 @@
 # Assumptions:
 #   - snap is installed
 
-while ! snap install microk8s --channel "${1}"; do
+while ! snap install microk8s "${1}"; do
   echo "Failed to install MicroK8s snap, will retry"
   sleep 5
 done

@@ -53,7 +53,7 @@ type ControlPlaneInitInput struct {
 	Addons []string
 	// IPinIP defines whether Calico will use IPinIP mode for cluster networking.
 	IPinIP bool
-	// Confinement specifies a classic or strict deployment of microk8s snap
+	// Confinement specifies a classic or strict deployment of microk8s snap.
 	Confinement string
 }
 
