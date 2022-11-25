@@ -55,6 +55,8 @@ type ControlPlaneInitInput struct {
 	IPinIP bool
 	// Confinement specifies a classic or strict deployment of microk8s snap.
 	Confinement string
+	// RiskLevel specifies the risk level (strict, candidate, beta, edge) for the snap channels.
+	RiskLevel string
 }
 
 func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
@@ -87,7 +89,6 @@ func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
 	}
 
 	// figure out snap channel from KubernetesVersion
-	// TODO: support specifying the snap channel
 	kubernetesVersion, err := version.ParseSemantic(input.KubernetesVersion)
 	if err != nil {
 		return nil, fmt.Errorf("kubernetes version %q is not a semantic version: %w", input.KubernetesVersion, err)
@@ -97,7 +98,7 @@ func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
 	if input.Confinement == "strict" && kubernetesVersion.Minor() < 25 {
 		return nil, fmt.Errorf("strict confinement is only available for microk8s v1.25+")
 	}
-	installArgs := createInstallArgs(input.Confinement, kubernetesVersion)
+	installArgs := createInstallArgs(input.Confinement, input.RiskLevel, kubernetesVersion)
 
 	cloudConfig := NewBaseCloudConfig()
 	cloudConfig.WriteFiles = append(

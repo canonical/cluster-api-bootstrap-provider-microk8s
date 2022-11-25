@@ -22,13 +22,21 @@ import (
 	"k8s.io/apimachinery/pkg/util/version"
 )
 
-func createInstallArgs(confinement string, kubernetesVersion *version.Version) string {
+func createInstallArgs(confinement string, riskLevel string, kubernetesVersion *version.Version) string {
 	installChannel := fmt.Sprintf("%d.%d", kubernetesVersion.Major(), kubernetesVersion.Minor())
 	var installArgs string
 	if confinement == "strict" {
-		installArgs = fmt.Sprintf("--channel %s-strict", installChannel)
+		if riskLevel != "" {
+			installArgs = fmt.Sprintf("--channel %s-strict/%s", installChannel, riskLevel)
+		} else {
+			installArgs = fmt.Sprintf("--channel %s-strict", installChannel)
+		}
 	} else {
-		installArgs = fmt.Sprintf("--channel %s --classic", installChannel)
+		if riskLevel != "" {
+			installArgs = fmt.Sprintf("--channel %s/%s --classic", installChannel, riskLevel)
+		} else {
+			installArgs = fmt.Sprintf("--channel %s --classic", installChannel)
+		}
 	}
 
 	return installArgs

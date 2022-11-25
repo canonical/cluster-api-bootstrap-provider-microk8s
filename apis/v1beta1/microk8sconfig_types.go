@@ -74,6 +74,12 @@ type InitConfiguration struct {
 	// +optional
 	// +kubebuilder:validation:Enum=classic;strict
 	Confinement string `json:"Confinement,omitempty"`
+
+	// The risk-level (stable, candidate, beta, or edge) for the snaps
+	// +optional
+	// +kubebuilder:validation:Enum=stable;candidate;beta;edge
+	// +kubebuilder:default:=stable
+	RiskLevel string `json:"RiskLevel,omitempty"`
 }
 
 // MicroK8sConfigSpec defines the desired state of MicroK8sConfig

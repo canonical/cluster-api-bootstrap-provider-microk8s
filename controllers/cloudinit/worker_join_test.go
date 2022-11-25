@@ -78,3 +78,24 @@ func TestConfinementWorkerJoin(t *testing.T) {
 		g.Expect(err).ToNot(HaveOccurred())
 	})
 }
+
+func TestRiskLevelWorkerJoin(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		g := NewWithT(t)
+
+		cloudConfig, err := cloudinit.NewJoinWorker(&cloudinit.WorkerInput{
+			KubernetesVersion: "v1.25.3",
+			Token:             strings.Repeat("a", 32),
+			Confinement:       "strict",
+			RiskLevel:         "beta",
+		})
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(cloudConfig.RunCommands[2]).To(Equal(
+			`/capi-scripts/00-install-microk8s.sh "--channel 1.25-strict/beta"`,
+		))
+
+		_, err = cloudinit.GenerateCloudConfig(cloudConfig)
+		g.Expect(err).ToNot(HaveOccurred())
+	})
+}

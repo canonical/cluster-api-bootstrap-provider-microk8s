@@ -96,3 +96,25 @@ func TestConfinementControlPlaneJoin(t *testing.T) {
 		g.Expect(err).ToNot(HaveOccurred())
 	})
 }
+
+func TestRiskLevelControlPlaneJoin(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		g := NewWithT(t)
+
+		cloudConfig, err := cloudinit.NewJoinControlPlane(&cloudinit.ControlPlaneJoinInput{
+			KubernetesVersion: "v1.25.2",
+			Token:             strings.Repeat("a", 32),
+			TokenTTL:          10000,
+			Confinement:       "strict",
+			RiskLevel:         "candidate",
+		})
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(cloudConfig.RunCommands[2]).To(Equal(
+			`/capi-scripts/00-install-microk8s.sh "--channel 1.25-strict/candidate"`,
+		))
+
+		_, err = cloudinit.GenerateCloudConfig(cloudConfig)
+		g.Expect(err).ToNot(HaveOccurred())
+	})
+}

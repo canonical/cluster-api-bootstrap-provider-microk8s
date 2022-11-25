@@ -76,7 +76,7 @@ func TestControlPlaneInit(t *testing.T) {
 	})
 }
 
-func TestControlPlaneConfinementInit(t *testing.T) {
+func TestConfinementControlPlaneInit(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		g := NewWithT(t)
 
@@ -122,6 +122,28 @@ func TestControlPlaneConfinementInit(t *testing.T) {
 				Permissions: "0600",
 				Owner:       "root:root",
 			},
+		))
+
+		_, err = cloudinit.GenerateCloudConfig(cloudConfig)
+		g.Expect(err).ToNot(HaveOccurred())
+	})
+}
+
+func TestRiskLevelControlPlaneInit(t *testing.T) {
+	t.Run("Simple", func(t *testing.T) {
+		g := NewWithT(t)
+
+		cloudConfig, err := cloudinit.NewInitControlPlane(&cloudinit.ControlPlaneInitInput{
+			KubernetesVersion: "v1.25.2",
+			Token:             strings.Repeat("a", 32),
+			TokenTTL:          10000,
+			Confinement:       "strict",
+			RiskLevel:         "edge",
+		})
+		g.Expect(err).NotTo(HaveOccurred())
+
+		g.Expect(cloudConfig.RunCommands[2]).To(Equal(
+			`/capi-scripts/00-install-microk8s.sh "--channel 1.25-strict/edge"`,
 		))
 
 		_, err = cloudinit.GenerateCloudConfig(cloudConfig)
