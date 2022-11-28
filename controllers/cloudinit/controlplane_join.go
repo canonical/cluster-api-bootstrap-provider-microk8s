@@ -19,6 +19,8 @@ package cloudinit
 import (
 	"fmt"
 	"net"
+	"path/filepath"
+	"strings"
 
 	"k8s.io/apimachinery/pkg/util/version"
 )
@@ -53,6 +55,8 @@ type ControlPlaneJoinInput struct {
 	RiskLevel string
 	// ExtraWriteFiles is a list of extra files to inject with cloud-init.
 	ExtraWriteFiles []File
+	// ExtraKubeletArgs is a list of arguments to add to kubelet.
+	ExtraKubeletArgs []string
 }
 
 func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
@@ -84,12 +88,20 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 
 	cloudConfig := NewBaseCloudConfig()
 	cloudConfig.WriteFiles = append(cloudConfig.WriteFiles, input.ExtraWriteFiles...)
-
+	if args := input.ExtraKubeletArgs; len(args) > 0 {
+		cloudConfig.WriteFiles = append(cloudConfig.WriteFiles, File{
+			Content:     strings.Join(args, "\n"),
+			Path:        filepath.Join("/var", "tmp", "extra-kubelet-args"),
+			Permissions: "0400",
+			Owner:       "root:root",
+		})
+	}
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
 		"set -x",
 		scriptPath(disableHostServicesScript),
 		fmt.Sprintf("%s %q", scriptPath(installMicroK8sScript), installArgs),
 		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),
+		scriptPath(configureKubeletScript),
 		"microk8s status --wait-ready",
 		fmt.Sprintf("%s %v", scriptPath(configureCalicoIPIPScript), input.IPinIP),
 		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),

@@ -41,6 +41,7 @@ func TestWorkerJoin(t *testing.T) {
 			`/capi-scripts/00-disable-host-services.sh`,
 			`/capi-scripts/00-install-microk8s.sh "--channel 1.24 --classic"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
+			`/capi-scripts/10-configure-kubelet.sh`,
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,
 			`/capi-scripts/20-microk8s-join.sh "10.0.3.194:30000/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" --worker`,

@@ -58,6 +58,9 @@ const (
 	// configureTraefikScript configures the control plane endpoint in the traefik provider configuration.
 	configureTraefikScript script = "10-configure-traefik.sh"
 
+	// configureKubeletScript configures the kubelet.
+	configureKubeletScript script = "10-configure-kubelet.sh"
+
 	// microk8sEnableScript enables MicroK8s addons.
 	microk8sEnableScript script = "20-microk8s-enable.sh"
 
@@ -74,6 +77,7 @@ var allScripts = []script{
 	configureContainerdProxyScript,
 	configureDqlitePortScript,
 	configureTraefikScript,
+	configureKubeletScript,
 	microk8sEnableScript,
 	microk8sJoinScript,
 }

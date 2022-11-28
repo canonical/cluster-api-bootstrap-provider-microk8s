@@ -46,6 +46,7 @@ func TestControlPlaneInit(t *testing.T) {
 			`/capi-scripts/00-disable-host-services.sh`,
 			`/capi-scripts/00-install-microk8s.sh "--channel 1.25 --classic"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,
+			`/capi-scripts/10-configure-kubelet.sh`,
 			`microk8s status --wait-ready`,
 			`microk8s refresh-certs /var/tmp`,
 			`/capi-scripts/10-configure-calico-ipip.sh true`,
