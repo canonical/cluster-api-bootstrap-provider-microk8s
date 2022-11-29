@@ -30,6 +30,18 @@ import (
 
 const KUBECONFIG string = "/var/tmp/kubeconfig.e2e.conf"
 
+// TestBasic waits for the target cluster to deploy and start a 30 pod deployment.
+// The CLUSTER_MANIFEST_FILE environment variable should point to a manifest with the target cluster
+// kubectl and clusterctl have to be avaibale in the caller's path.
+// kubectl should be setup so it uses the kubeconfig of the management cluster by default.
+func TestBasic(t *testing.T) {
+	setupCheck(t)
+	t.Cleanup(teardownCluster)
+
+	deployCluster(t)
+	deployMicrobot(t)
+}
+
 func setupCheck(t testing.TB) {
 	cluster_manifest_file := os.Getenv("CLUSTER_MANIFEST_FILE")
 	if cluster_manifest_file == "" {
@@ -274,16 +286,4 @@ func deployMicrobot(t testing.TB) {
 			break
 		}
 	}
-}
-
-// TestBasic waits for the target cluster to deploy and start a 30 pod deployment.
-// The CLUSTER_MANIFEST_FILE environment variable should point to a manifest with the target cluster
-// kubectl and clusterctl have to be avaibale in the caller's path.
-// kubectl should be setup so it uses the kubeconfig of the management cluster by default.
-func TestBasic(t *testing.T) {
-	setupCheck(t)
-	t.Cleanup(teardownCluster)
-
-	deployCluster(t)
-	deployMicrobot(t)
 }
