@@ -67,25 +67,9 @@ spec:
                         type: object
                       initConfiguration:
                         properties:
-                          Confinement:
-                            description: The confinement (strict or classic) configuration
-                            enum:
-                            - classic
-                            - strict
-                            type: string
                           IPinIP:
                             description: The optional IPinIP configuration
                             type: boolean
-                          RiskLevel:
-                            default: stable
-                            description: The risk-level (stable, candidate, beta,
-                              or edge) for the snaps
-                            enum:
-                            - stable
-                            - candidate
-                            - beta
-                            - edge
-                            type: string
                           addons:
                             description: List of addons to be enabled upon cluster
                               creation
@@ -97,6 +81,12 @@ spec:
                               of this representation of an object. Servers should
                               convert recognized schemas to the latest internal value,
                               and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#resources'
+                            type: string
+                          confinement:
+                            description: The confinement (strict or classic) configuration
+                            enum:
+                            - classic
+                            - strict
                             type: string
                           extraKubeletArgs:
                             description: ExtraKubeletArgs is a list of extra arguments
@@ -152,6 +142,16 @@ spec:
                             type: string
                           noProxy:
                             description: The optional no proxy configuration
+                            type: string
+                          riskLevel:
+                            default: stable
+                            description: The risk-level (stable, candidate, beta,
+                              or edge) for the snaps
+                            enum:
+                            - stable
+                            - candidate
+                            - beta
+                            - edge
                             type: string
                         type: object
                     type: object

@@ -73,13 +73,13 @@ type InitConfiguration struct {
 	// The confinement (strict or classic) configuration
 	// +optional
 	// +kubebuilder:validation:Enum=classic;strict
-	Confinement string `json:"Confinement,omitempty"`
+	Confinement string `json:"confinement,omitempty"`
 
 	// The risk-level (stable, candidate, beta, or edge) for the snaps
 	// +optional
 	// +kubebuilder:validation:Enum=stable;candidate;beta;edge
 	// +kubebuilder:default:=stable
-	RiskLevel string `json:"RiskLevel,omitempty"`
+	RiskLevel string `json:"riskLevel,omitempty"`
 
 	// ExtraWriteFiles is a list of extra files to inject with cloud-init.
 	// +optional
