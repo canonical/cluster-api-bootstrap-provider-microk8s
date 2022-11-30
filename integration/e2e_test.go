@@ -25,6 +25,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"strings"
+	"syscall"
 	"testing"
 	"time"
 )
