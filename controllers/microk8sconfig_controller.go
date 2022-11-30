@@ -480,14 +480,15 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		KubernetesVersion: *machine.Spec.Version,
 		ClusterAgentPort:  portOfNodeToConnectTo,
 		JoinNodeIP:        ipOfNodeToConnectTo,
-		ExtraWriteFiles:   cloudinit.WriteFilesFromAPI(microk8sConfig.Spec.InitConfiguration.ExtraWriteFiles),
-		ExtraKubeletArgs:  microk8sConfig.Spec.InitConfiguration.ExtraKubeletArgs,
 	}
 
 	if c := microk8sConfig.Spec.InitConfiguration; c != nil {
 		workerInput.ContainerdHTTPSProxy = c.HTTPSProxy
 		workerInput.ContainerdHTTPProxy = c.HTTPProxy
 		workerInput.ContainerdNoProxy = c.NoProxy
+
+		workerInput.ExtraKubeletArgs = c.ExtraKubeletArgs
+		workerInput.ExtraWriteFiles = cloudinit.WriteFilesFromAPI(c.ExtraWriteFiles)
 	}
 	bootstrapInitData, err := cloudinit.NewJoinWorker(workerInput)
 	if err != nil {
