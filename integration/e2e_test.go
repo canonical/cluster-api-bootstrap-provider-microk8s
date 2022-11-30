@@ -23,12 +23,23 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/signal"
 	"strings"
 	"testing"
 	"time"
 )
 
 const KUBECONFIG string = "/var/tmp/kubeconfig.e2e.conf"
+
+func init() {
+	s := make(chan os.Signal, 1)
+	signal.Notify(s, syscall.SIGTERM, syscall.SIGINT)
+	go func() {
+		<-s
+		teardownCluster()
+		os.Exit(1)
+	}()
+}
 
 // TestBasic waits for the target cluster to deploy and start a 30 pod deployment.
 // The CLUSTER_MANIFEST_FILE environment variable should point to a manifest with the target cluster
