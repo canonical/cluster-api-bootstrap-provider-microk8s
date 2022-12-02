@@ -8,7 +8,7 @@
 #   - microk8s apiserver is up and running
 
 # enable community addons, this is for free and avoids confusion if addons are failing to install
-microk8s enable community
+microk8s enable community || true
 
 while [[ "$@" != "" ]]; do
   microk8s enable "$1"
