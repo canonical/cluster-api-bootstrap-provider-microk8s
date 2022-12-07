@@ -55,9 +55,6 @@ const (
 	// configureDqlitePortScript configures the port used by dqlite.
 	configureDqlitePortScript script = "10-configure-dqlite-port.sh"
 
-	// configureTraefikScript configures the control plane endpoint in the traefik provider configuration.
-	configureTraefikScript script = "10-configure-traefik.sh"
-
 	// configureKubeletScript configures the kubelet.
 	configureKubeletScript script = "10-configure-kubelet.sh"
 
@@ -66,6 +63,9 @@ const (
 
 	// microk8sJoinScript joins the current node to a MicroK8s cluster.
 	microk8sJoinScript script = "20-microk8s-join.sh"
+
+	// configureTraefikScript configures the control plane endpoint in the traefik provider configuration.
+	configureTraefikScript script = "30-configure-traefik.sh"
 )
 
 var allScripts = []script{

@@ -476,10 +476,11 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 	}
 
 	workerInput := &cloudinit.WorkerInput{
-		Token:             token,
-		KubernetesVersion: *machine.Spec.Version,
-		ClusterAgentPort:  portOfNodeToConnectTo,
-		JoinNodeIP:        ipOfNodeToConnectTo,
+		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
+		Token:                token,
+		KubernetesVersion:    *machine.Spec.Version,
+		ClusterAgentPort:     portOfNodeToConnectTo,
+		JoinNodeIP:           ipOfNodeToConnectTo,
 	}
 
 	if c := microk8sConfig.Spec.InitConfiguration; c != nil {

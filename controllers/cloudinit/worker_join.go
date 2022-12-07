@@ -26,6 +26,8 @@ import (
 
 // WorkerInput defines the context needed to generate a worker instance to join a cluster.
 type WorkerInput struct {
+	// ControlPlaneEndpoint is the control plane endpoint of the cluster.
+	ControlPlaneEndpoint string
 	// Token is the token that will be used for joining other nodes to the cluster.
 	Token string
 	// KubernetesVersion is the Kubernetes version we want to install.
@@ -87,6 +89,7 @@ func NewJoinWorker(input *WorkerInput) (*CloudConfig, error) {
 		"microk8s status --wait-ready",
 		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
 		fmt.Sprintf("%s %q --worker", scriptPath(microk8sJoinScript), fmt.Sprintf("%s:%s/%s", input.JoinNodeIP, input.ClusterAgentPort, input.Token)),
+		fmt.Sprintf("%s %s 6443", scriptPath(configureTraefikScript), input.ControlPlaneEndpoint),
 	)
 
 	return cloudConfig, nil
