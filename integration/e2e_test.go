@@ -24,6 +24,7 @@ import (
 	"os"
 	"os/exec"
 	"os/signal"
+	"regexp"
 	"strings"
 	"syscall"
 	"testing"
@@ -50,8 +51,9 @@ func TestBasic(t *testing.T) {
 	setupCheck(t)
 	t.Cleanup(teardownCluster)
 
-	deployCluster(t)
-	deployMicrobot(t)
+	t.Run("DeployCluster", func(t *testing.T) { deployCluster(t) })
+	t.Run("DeployMicrobot", func(t *testing.T) { deployMicrobot(t) })
+	t.Run("UpgradeCluster", func(t *testing.T) { upgradeCluster(t) })
 }
 
 func setupCheck(t testing.TB) {
@@ -79,15 +81,14 @@ func setupCheck(t testing.TB) {
 
 func waitForPod(t testing.TB, pod string, ns string) {
 	attempt := 0
-	max_attempts := 10
-	command_str := fmt.Sprintf("kubectl wait --timeout=15s --for=condition=available deploy/%s -n %s", pod, ns)
-	command := strings.Fields(command_str)
+	maxAttempts := 10
+	command := []string{"kubectl", "wait", "--timeout=15s", "--for=condition=available", "deploy/" + pod, "-n", ns}
 	for {
 		cmd := exec.Command(command[0], command[1:]...)
-		output, err := cmd.CombinedOutput()
+		outputBytes, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Log(string(output))
-			if attempt >= max_attempts {
+			t.Log(string(outputBytes))
+			if attempt >= maxAttempts {
 				t.Fatal(err)
 			} else {
 				t.Logf("Retrying...")
@@ -101,54 +102,51 @@ func waitForPod(t testing.TB, pod string, ns string) {
 }
 
 func teardownCluster() {
-	command := strings.Fields("kubectl get cluster --no-headers -o custom-columns=:metadata.name")
+	command := []string{"kubectl", "get", "cluster", "--no-headers", "-o", "custom-columns=:metadata.name"}
 	cmd := exec.Command(command[0], command[1:]...)
-	output, err := cmd.CombinedOutput()
+	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
 		// Could not get any produced clusters. Nothing to cleanup... I hope.
 		return
 	}
 
-	cluster := strings.Trim(string(output), "\n")
-	command_str := fmt.Sprintf("kubectl delete cluster %s", cluster)
-	command = strings.Fields(command_str)
+	cluster := strings.Trim(string(outputBytes), "\n")
+	command = []string{"kubectl", "delete", "cluster", cluster}
 	cmd = exec.Command(command[0], command[1:]...)
 	cmd.Run()
 }
 
 func deployCluster(t testing.TB) {
 	t.Log("Setting up the cluster")
-	command_str := fmt.Sprintf("kubectl apply -f %s", os.Getenv("CLUSTER_MANIFEST_FILE"))
-	command := strings.Fields(command_str)
+	command := []string{"kubectl", "apply", "-f", os.Getenv("CLUSTER_MANIFEST_FILE")}
 	cmd := exec.Command(command[0], command[1:]...)
-	output, err := cmd.CombinedOutput()
+	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Error(string(output))
+		t.Error(string(outputBytes))
 		t.Fatalf("Failed to create the requested cluster. %s", err)
 	}
 
 	time.Sleep(30 * time.Second)
 
-	command = strings.Fields("kubectl get cluster --no-headers -o custom-columns=:metadata.name")
+	command = []string{"kubectl", "get", "cluster", "--no-headers", "-o", "custom-columns=:metadata.name"}
 	cmd = exec.Command(command[0], command[1:]...)
-	output, err = cmd.CombinedOutput()
+	outputBytes, err = cmd.CombinedOutput()
 	if err != nil {
-		t.Error(string(output))
+		t.Error(string(outputBytes))
 		t.Fatalf("Failed to get the name of the cluster. %s", err)
 	}
 
-	cluster := strings.Trim(string(output), "\n")
+	cluster := strings.Trim(string(outputBytes), "\n")
 	t.Logf("Cluster name is %s", cluster)
 
 	attempt := 0
-	max_attempts := 60
-	command_str = fmt.Sprintf("clusterctl get kubeconfig %s", cluster)
-	command = strings.Fields(command_str)
+	maxAttempts := 60
+	command = []string{"clusterctl", "get", "kubeconfig", cluster}
 	for {
 		cmd = exec.Command(command[0], command[1:]...)
-		output, err = cmd.Output()
+		outputBytes, err = cmd.Output()
 		if err != nil {
-			if attempt >= max_attempts {
+			if attempt >= maxAttempts {
 				t.Fatal(err)
 			} else {
 				attempt++
@@ -156,7 +154,7 @@ func deployCluster(t testing.TB) {
 				time.Sleep(20 * time.Second)
 			}
 		} else {
-			cfg := strings.Trim(string(output), "\n")
+			cfg := strings.Trim(string(outputBytes), "\n")
 			err = os.WriteFile(KUBECONFIG, []byte(cfg), 0644)
 			if err != nil {
 				t.Fatalf("Could not persist the targets kubeconfig file. %s", err)
@@ -169,15 +167,14 @@ func deployCluster(t testing.TB) {
 
 	// Wait until the cluster is provisioned
 	attempt = 0
-	max_attempts = 60
-	command_str = fmt.Sprintf("kubectl get cluster %s", cluster)
-	command = strings.Fields(command_str)
+	maxAttempts = 60
+	command = []string{"kubectl", "get", "cluster", cluster}
 	for {
 		cmd = exec.Command(command[0], command[1:]...)
-		output, err = cmd.CombinedOutput()
+		outputBytes, err = cmd.CombinedOutput()
 		if err != nil {
-			t.Log(string(output))
-			if attempt >= max_attempts {
+			t.Log(string(outputBytes))
+			if attempt >= maxAttempts {
 				t.Fatal(err)
 			} else {
 				attempt++
@@ -185,7 +182,7 @@ func deployCluster(t testing.TB) {
 				time.Sleep(10 * time.Second)
 			}
 		} else {
-			if strings.Contains(string(output), "Provisioned") {
+			if strings.Contains(string(outputBytes), "Provisioned") {
 				break
 			} else {
 				attempt++
@@ -197,16 +194,16 @@ func deployCluster(t testing.TB) {
 
 	// Wait until all machines are running
 	attempt = 0
-	max_attempts = 60
+	maxAttempts = 60
 	machines := 0
-	command = strings.Fields("kubectl get machine --no-headers")
+	command = []string{"kubectl", "get", "machine", "--no-headers"}
 	for {
 		cmd = exec.Command(command[0], command[1:]...)
-		output, err = cmd.CombinedOutput()
-		output_str := string(output)
+		outputBytes, err = cmd.CombinedOutput()
+		output := string(outputBytes)
 		if err != nil {
-			t.Log(output_str)
-			if attempt >= max_attempts {
+			t.Log(output)
+			if attempt >= maxAttempts {
 				t.Fatal(err)
 			} else {
 				attempt++
@@ -214,8 +211,8 @@ func deployCluster(t testing.TB) {
 				time.Sleep(10 * time.Second)
 			}
 		} else {
-			machines = strings.Count(output_str, "\n")
-			running := strings.Count(output_str, "Running")
+			machines = strings.Count(output, "\n")
+			running := strings.Count(output, "Running")
 			t.Logf("Machines %d out of which %d are Running", machines, running)
 			if machines == running {
 				break
@@ -229,16 +226,15 @@ func deployCluster(t testing.TB) {
 
 	// Make sure we have as many nodes as machines
 	attempt = 0
-	max_attempts = 60
-	command_str = fmt.Sprintf("kubectl --kubeconfig=%s get no --no-headers", KUBECONFIG)
-	command = strings.Fields(command_str)
+	maxAttempts = 60
+	command = []string{"kubectl", "--kubeconfig=" + KUBECONFIG, "get", "no", "--no-headers"}
 	for {
 		cmd = exec.Command(command[0], command[1:]...)
-		output, err = cmd.CombinedOutput()
-		output_str := string(output)
+		outputBytes, err = cmd.CombinedOutput()
+		output := string(outputBytes)
 		if err != nil {
-			t.Log(output_str)
-			if attempt >= max_attempts {
+			t.Log(output)
+			if attempt >= maxAttempts {
 				t.Fatal(err)
 			} else {
 				attempt++
@@ -246,8 +242,8 @@ func deployCluster(t testing.TB) {
 				t.Log("Retrying")
 			}
 		} else {
-			nodes := strings.Count(output_str, "\n")
-			ready := strings.Count(output_str, " Ready")
+			nodes := strings.Count(output, "\n")
+			ready := strings.Count(output, " Ready")
 			t.Logf("Machines are %d, Nodes are %d out of which %d are Ready", machines, nodes, ready)
 			if machines == nodes && ready == nodes {
 				break
@@ -262,32 +258,26 @@ func deployCluster(t testing.TB) {
 
 func deployMicrobot(t testing.TB) {
 	t.Log("Deploying microbot")
-	command_str := fmt.Sprintf("kubectl --kubeconfig=%s delete deployment bot", KUBECONFIG)
-	command := strings.Fields(command_str)
-	cmd := exec.Command(command[0], command[1:]...)
-	cmd.Run()
 
-	command_str = fmt.Sprintf("kubectl --kubeconfig=%s create deploy --image=cdkbot/microbot:1 --replicas=30 bot", KUBECONFIG)
-	command = strings.Fields(command_str)
-	cmd = exec.Command(command[0], command[1:]...)
-	output, err := cmd.CombinedOutput()
+	command := []string{"kubectl", "--kubeconfig=" + KUBECONFIG, "create", "deploy", "--image=cdkbot/microbot:1", "--replicas=30", "bot"}
+	cmd := exec.Command(command[0], command[1:]...)
+	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
-		t.Error(string(output))
+		t.Error(string(outputBytes))
 		t.Fatalf("Failed to create the requested microbot deployment. %s", err)
 	}
 
 	// Make sure we have as many nodes as machines
 	attempt := 0
-	max_attempts := 60
+	maxAttempts := 60
 	t.Log("Waiting for the deployment to complete")
-	command_str = fmt.Sprintf("kubectl --kubeconfig=%s wait deploy/bot --for=jsonpath={.status.readyReplicas}=30", KUBECONFIG)
-	command = strings.Fields(command_str)
+	command = []string{"kubectl", "--kubeconfig=" + KUBECONFIG, "wait", "deploy/bot", "--for=jsonpath={.status.readyReplicas}=30"}
 	for {
 		cmd = exec.Command(command[0], command[1:]...)
-		output, err := cmd.CombinedOutput()
+		outputBytes, err := cmd.CombinedOutput()
 		if err != nil {
-			t.Log(string(output))
-			if attempt >= max_attempts {
+			t.Log(string(outputBytes))
+			if attempt >= maxAttempts {
 				t.Fatal(err)
 			} else {
 				attempt++
@@ -296,6 +286,95 @@ func deployMicrobot(t testing.TB) {
 			}
 		} else {
 			break
+		}
+	}
+}
+
+func upgradeCluster(t testing.TB) {
+	version := os.Getenv("CAPI_UPGRADE_VERSION")
+	if version == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_VERSION is not set." +
+			"Please set it to the version you want to upgrade to.")
+	}
+
+	control_plane_name := os.Getenv("CAPI_UPGRADE_CP_NAME")
+	if control_plane_name == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_CP_NAME is not set." +
+			"Please set it to the name of the control plane you want to upgrade.")
+	}
+
+	control_plane_type := os.Getenv("CAPI_UPGRADE_CP_TYPE")
+	if control_plane_type == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_CP_TYPE is not set." +
+			"Please set it to the type of the control plane you want to upgrade.")
+	}
+
+	worker_deployment_name := os.Getenv("CAPI_UPGRADE_MD_NAME")
+	if worker_deployment_name == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_MD_NAME is not set." +
+			"Please set it to the name of the machine deployment you want to upgrade.")
+	}
+
+	worker_deployment_type := os.Getenv("CAPI_UPGRADE_MD_TYPE")
+	if worker_deployment_type == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_MD_TYPE is not set." +
+			"Please set it to the type of the machine deployment you want to upgrade.")
+	}
+
+	t.Logf("Upgrading cluster to %s", version)
+	// Patch contol plane machine upgrades.
+	command := []string{"kubectl", "patch", "--type=merge", control_plane_type, control_plane_name, "--patch",
+		fmt.Sprintf(`{"spec":{"version":"%s"}}`, version)}
+	cmd := exec.Command(command[0], command[1:]...)
+	outputBytes, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Error(string(outputBytes))
+		t.Fatalf("Failed to merge the patch to control plane. %s", err)
+	}
+
+	// Patch worker machine upgrades.
+	command = []string{"kubectl", "patch", "--type=merge", worker_deployment_type, worker_deployment_name, "--patch",
+		fmt.Sprintf(`{"spec":{"template":{"spec":{"version":"%s"}}}}`, version)}
+	cmd = exec.Command(command[0], command[1:]...)
+	outputBytes, err = cmd.CombinedOutput()
+	if err != nil {
+		t.Error(string(outputBytes))
+		t.Fatalf("Failed to merge the patch to the machine deployments. %s", err)
+	}
+
+	time.Sleep(30 * time.Second)
+
+	// Now all the machines should be upgraded to the new version.
+	attempt := 0
+	maxAttempts := 60
+	command = []string{"kubectl", "get", "machine", "--no-headers"}
+	for {
+		cmd := exec.Command(command[0], command[1:]...)
+		outputBytes, err := cmd.CombinedOutput()
+		output := string(outputBytes)
+		if err != nil {
+			t.Log(output)
+			if attempt >= maxAttempts {
+				t.Fatal(err)
+			}
+
+			attempt++
+			t.Log("Retrying")
+			time.Sleep(20 * time.Second)
+		} else {
+			totalMachines := strings.Count(output, "Running")
+
+			// We count all the "Running" machines with the new version.
+			re := regexp.MustCompile("Running .* " + version)
+			upgradedMachines := len(re.FindAllString(output, -1))
+			t.Logf("Total machines %d out of which %d are upgraded", totalMachines, upgradedMachines)
+			if totalMachines == upgradedMachines {
+				break
+			} else {
+				attempt++
+				time.Sleep(20 * time.Second)
+				t.Log("Waiting for machines to upgrade and start running")
+			}
 		}
 	}
 }

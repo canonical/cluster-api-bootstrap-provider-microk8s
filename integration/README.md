@@ -14,8 +14,18 @@ The integration/e2e tests have the following prerequisites:
     export AWS_PUBLIC_IP=false
     export AWS_CONTROL_PLANE_MACHINE_FLAVOR=t3.large
     export AWS_NODE_MACHINE_FLAVOR=t3.large
-    clusterctl generate cluster test-ci-cluster --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
+    export CLUSTER_NAME=test-ci-cluster
+    clusterctl generate cluster ${CLUSTER_NAME} --from "bootstrap/templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster.yaml
     export CLUSTER_MANIFEST_FILE=$PWD/cluster.yaml
+  ```
+
+  *  Additional environment variables when testing cluster upgrades:
+  ```
+    export CAPI_UPGRADE_VERSION=v1.25.0
+    export CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
+    export CAPI_UPGRADE_MD_TYPE=machinedeployments.cluster.x-k8s.io
+    export CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
+    export CAPI_UPGRADE_CP_TYPE=microk8scontrolplanes.controlplane.cluster.x-k8s.io
   ```
 
   * `clusterctl` available in the PATH
@@ -62,7 +72,7 @@ Build and push a docker image for the bootstrap provider.
 ```bash
 cd bootstrap
 docker build -t <username>/capi-bootstrap-provider-microk8s:<tag> .
-docker push <username>capi-bootstrap-provider-microk8s:<tag>
+docker push <username>/capi-bootstrap-provider-microk8s:<tag>
 sed "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,docker.io/<username>/capi-bootstrap-provider-microk8s:<tag>," -i bootstrap-components.yaml
 ```
 
