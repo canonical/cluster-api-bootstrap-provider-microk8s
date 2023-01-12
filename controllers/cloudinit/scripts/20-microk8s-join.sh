@@ -22,4 +22,11 @@ done
 # --network-plugin will cause kubelite to crashloop.
 # Threfore we call the conigure hook to clean things.
 # PS. This should be a workaround to a MicroK8s bug.
-snap set microk8s configure=call
+while ! snap set microk8s configure=call$$; do
+  echo "Failed to call the configure hook, will retry"
+  sleep 5
+done
+# allow for some time for the k8s services to start and
+# also to have the apiserver-proxy fetch the new endpoint
+# when/if this is a CP node
+sleep 35

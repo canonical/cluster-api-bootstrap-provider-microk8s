@@ -12,6 +12,11 @@
 
 PROVIDER_YAML="/var/snap/microk8s/current/args/traefik/provider.yaml"
 
+while ! [ -f "${PROVIDER_YAML}" ]; do
+    echo "Waiting for ${PROVIDER_YAML}"
+    sleep 5
+done
+
 # cleanup any addresses from the provider.yaml file
 sed '/address:/d' -i "${PROVIDER_YAML}"
 
