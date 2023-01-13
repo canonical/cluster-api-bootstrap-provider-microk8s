@@ -38,8 +38,19 @@ while ! snap set microk8s configure=call$$; do
   echo "Failed to call the configure hook, will retry"
   sleep 5
 done
-snap restart microk8s.daemon-kubelite
-# allow for some time for the k8s services to start and
-# also to have the apiserver-proxy fetch the new endpoint
-# when/if this is a CP node
-sleep 35
+sleep 10
+
+while ! snap restart microk8s.daemon-containerd; do
+  sleep 5
+done
+while ! snap restart microk8s.daemon-kubelite; do
+  sleep 5
+done
+sleep 10
+
+if [ ${1} == "no" ]; then
+  while ! microk8s status --wait-ready; do
+    echo "Waiting for the cluster to come up"
+    sleep 5
+  done
+then

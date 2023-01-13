@@ -40,6 +40,9 @@ const (
 	// installMicroK8sScript installs MicroK8s on the host.
 	installMicroK8sScript script = "00-install-microk8s.sh"
 
+	// configureCertLB configures the server certificate so it is valid for the LB.
+	configureCertLB script = "10-configure-cert-for-lb.sh"
+
 	// configureAPIServerScript configures arguments and sets apiserver port to 6443.
 	configureAPIServerScript script = "10-configure-apiserver.sh"
 
@@ -71,6 +74,7 @@ const (
 var allScripts = []script{
 	disableHostServicesScript,
 	installMicroK8sScript,
+	configureCertLB,
 	configureAPIServerScript,
 	configureCalicoIPIPScript,
 	configureClusterAgentPortScript,

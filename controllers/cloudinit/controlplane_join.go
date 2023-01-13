@@ -111,8 +111,9 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
 		fmt.Sprintf("%s %q", scriptPath(configureDqlitePortScript), input.DqlitePort),
 		"microk8s status --wait-ready",
+		fmt.Sprintf("%s %q %q", scriptPath(configureCertLB), endpointType, input.ControlPlaneEndpoint),
 		fmt.Sprintf("%s no %q %q", scriptPath(microk8sJoinScript), joinStr, joinStrAlt),
-		fmt.Sprintf("%s %q %q", scriptPath(configureAPIServerScript), endpointType, input.ControlPlaneEndpoint),
+		scriptPath(configureAPIServerScript),
 		fmt.Sprintf("microk8s add-node --token-ttl %v --token %q", input.TokenTTL, input.Token),
 	)
 

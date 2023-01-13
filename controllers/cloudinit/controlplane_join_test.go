@@ -52,8 +52,9 @@ func TestControlPlaneJoin(t *testing.T) {
 			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,
 			`/capi-scripts/10-configure-dqlite-port.sh "2379"`,
 			`microk8s status --wait-ready`,
+			`/capi-scripts/10-configure-cert-for-lb.sh "DNS" "k8s.my-domain.com"`,
 			`/capi-scripts/20-microk8s-join.sh no "10.0.3.39:30000/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" "10.0.3.40:30000/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
-			`/capi-scripts/10-configure-apiserver.sh "DNS" "k8s.my-domain.com"`,
+			`/capi-scripts/10-configure-apiserver.sh`,
 			`microk8s add-node --token-ttl 10000 --token "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
 		}))
 
