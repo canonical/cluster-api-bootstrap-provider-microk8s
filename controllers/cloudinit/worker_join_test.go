@@ -46,7 +46,7 @@ func TestWorkerJoin(t *testing.T) {
 			`microk8s status --wait-ready`,
 			`/capi-scripts/10-configure-cluster-agent-port.sh "30000"`,
 			`/capi-scripts/20-microk8s-join.sh "10.0.3.194:30000/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" --worker`,
-			`/capi-scripts/30-configure-traefik.sh capi-aws-apiserver-1647391446.us-east-1.elb.amazonaws.com 6443`,
+			`/capi-scripts/30-configure-traefik.sh capi-aws-apiserver-1647391446.us-east-1.elb.amazonaws.com 6443 no`,
 		}))
 
 		_, err = cloudinit.GenerateCloudConfig(cloudConfig)

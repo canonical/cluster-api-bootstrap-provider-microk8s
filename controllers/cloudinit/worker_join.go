@@ -68,6 +68,11 @@ func NewJoinWorker(input *WorkerInput) (*CloudConfig, error) {
 	if input.Confinement == "strict" && kubernetesVersion.Minor() < 25 {
 		return nil, fmt.Errorf("strict confinement is only available for microk8s v1.25+")
 	}
+
+	stopApiServerProxyRefreshes := "no"
+	if kubernetesVersion.Minor() > 24 {
+		stopApiServerProxyRefreshes = "yes"
+	}
 	installArgs := createInstallArgs(input.Confinement, input.RiskLevel, kubernetesVersion)
 
 	cloudConfig := NewBaseCloudConfig()
@@ -89,7 +94,7 @@ func NewJoinWorker(input *WorkerInput) (*CloudConfig, error) {
 		"microk8s status --wait-ready",
 		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
 		fmt.Sprintf("%s %q --worker", scriptPath(microk8sJoinScript), fmt.Sprintf("%s:%s/%s", input.JoinNodeIP, input.ClusterAgentPort, input.Token)),
-		fmt.Sprintf("%s %s 6443", scriptPath(configureTraefikScript), input.ControlPlaneEndpoint),
+		fmt.Sprintf("%s %s 6443 %s", scriptPath(configureTraefikScript), input.ControlPlaneEndpoint, stopApiServerProxyRefreshes),
 	)
 
 	return cloudConfig, nil
