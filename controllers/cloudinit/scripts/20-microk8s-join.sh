@@ -1,13 +1,25 @@
 #!/bin/bash -xe
 
 # Usage:
-#   $0 $join_arguments...
+#   $0 $worker_yes_no $join_string $alternative_join_string
 #
 # Assumptions:
 #   - microk8s is installed
 #   - microk8s node is ready to join the cluster
 
-while ! microk8s join $@; do
+join="${2}"
+join_alt="${3}"
+
+if [ ${1} == "yes" ]; then
+  join+=" --worker"
+  join_alt+=" --worker"
+fi
+
+while ! microk8s join ${join}; do
+  echo "Failed to join MicroK8s cluster, retring alternative join string"
+  if ! microk8s join ${join_alt} ; then
+    break
+  fi
   echo "Failed to join MicroK8s cluster, will retry"
   sleep 5
 done

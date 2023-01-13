@@ -356,8 +356,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 	}()
 
 	scope.Info("Creating BootstrapData for the join control plane")
-	ipOfNodeToConnectTo, err := r.getControlPlaneNodeToJoin(ctx, scope)
-	if err != nil || ipOfNodeToConnectTo == "" {
+	ipsOfNodesToConnectTo, err := r.getControlPlaneNodesToJoin(ctx, scope)
+	if err != nil || ipsOfNodesToConnectTo[0] == "" {
 		scope.Info("Failed to discover a control plane IP, requeueing.")
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
@@ -388,7 +388,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
 		Token:                token,
 		TokenTTL:             microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,
-		JoinNodeIP:           ipOfNodeToConnectTo,
+		JoinNodeIPs:          ipsOfNodesToConnectTo,
 		KubernetesVersion:    *machine.Spec.Version,
 		ClusterAgentPort:     portOfNodeToConnectTo,
 		DqlitePort:           portOfDqlite,
@@ -463,8 +463,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		portOfNodeToConnectTo = remappedClusterAgentPort
 	}
 
-	ipOfNodeToConnectTo, err := r.getControlPlaneNodeToJoin(ctx, scope)
-	if err != nil || ipOfNodeToConnectTo == "" {
+	ipOfNodesToConnectTo, err := r.getControlPlaneNodesToJoin(ctx, scope)
+	if err != nil || ipOfNodesToConnectTo[0] == "" {
 		scope.Info("Failed to discover a control plane IP, requeueing.")
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
@@ -480,7 +480,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		Token:                token,
 		KubernetesVersion:    *machine.Spec.Version,
 		ClusterAgentPort:     portOfNodeToConnectTo,
-		JoinNodeIP:           ipOfNodeToConnectTo,
+		JoinNodeIPs:          ipOfNodesToConnectTo,
 	}
 
 	if c := microk8sConfig.Spec.InitConfiguration; c != nil {
@@ -511,27 +511,34 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 	return ctrl.Result{}, nil
 }
 
-func (r *MicroK8sConfigReconciler) getControlPlaneNodeToJoin(ctx context.Context, scope *Scope) (string, error) {
+func (r *MicroK8sConfigReconciler) getControlPlaneNodesToJoin(ctx context.Context, scope *Scope) ([2]string, error) {
+	var ipOfNodesToConnectTo [2]string
 	nodes, err := r.getControlPlaneMachinesForCluster(ctx, util.ObjectKey(scope.Cluster))
 	if err != nil {
 		scope.Error(err, "Lookup control plane nodes")
-		return "", err
+		return ipOfNodesToConnectTo, err
 	}
-	ipOfNodeToConnectTo := ""
+
+	n := 0
 	for _, node := range nodes {
-		if ipOfNodeToConnectTo != "" {
+		if n >= 2 {
 			break
 		}
 		if node.Spec.ProviderID != nil && node.Status.Phase == "Running" {
 			for _, address := range node.Status.Addresses {
 				if address.Address != "" {
-					ipOfNodeToConnectTo = address.Address
+					ipOfNodesToConnectTo[n] = address.Address
+					n += 1
+					if n == 1 {
+						ipOfNodesToConnectTo[n] = address.Address
+					}
 					break
 				}
 			}
 		}
 	}
-	return ipOfNodeToConnectTo, nil
+
+	return ipOfNodesToConnectTo, nil
 }
 
 func (r *MicroK8sConfigReconciler) storeBootstrapData(ctx context.Context, scope *Scope, data []byte) error {

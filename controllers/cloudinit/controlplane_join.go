@@ -47,8 +47,8 @@ type ControlPlaneJoinInput struct {
 	ContainerdNoProxy string
 	// IPinIP defines whether Calico will use IPinIP mode for cluster networking.
 	IPinIP bool
-	// JoinNodeIP is the IP address of the node to join.
-	JoinNodeIP string
+	// JoinNodeIPs is the IP addresses of the nodes to join.
+	JoinNodeIPs [2]string
 	// Confinement specifies a classic or strict deployment of microk8s snap.
 	Confinement string
 	// RiskLevel specifies the risk level (strict, candidate, beta, edge) for the snap channels.
@@ -96,6 +96,10 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 			Owner:       "root:root",
 		})
 	}
+
+	joinStr := fmt.Sprintf("%s:%s/%s", input.JoinNodeIPs[0], input.ClusterAgentPort, input.Token)
+	joinStrAlt := fmt.Sprintf("%s:%s/%s", input.JoinNodeIPs[1], input.ClusterAgentPort, input.Token)
+
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
 		"set -x",
 		scriptPath(disableHostServicesScript),
@@ -107,7 +111,7 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 		fmt.Sprintf("%s %q", scriptPath(configureClusterAgentPortScript), input.ClusterAgentPort),
 		fmt.Sprintf("%s %q", scriptPath(configureDqlitePortScript), input.DqlitePort),
 		"microk8s status --wait-ready",
-		fmt.Sprintf("%s %q", scriptPath(microk8sJoinScript), fmt.Sprintf("%s:%s/%s", input.JoinNodeIP, input.ClusterAgentPort, input.Token)),
+		fmt.Sprintf("%s no %q %q", scriptPath(microk8sJoinScript), joinStr, joinStrAlt),
 		fmt.Sprintf("%s %q %q", scriptPath(configureAPIServerScript), endpointType, input.ControlPlaneEndpoint),
 		fmt.Sprintf("microk8s add-node --token-ttl %v --token %q", input.TokenTTL, input.Token),
 	)
