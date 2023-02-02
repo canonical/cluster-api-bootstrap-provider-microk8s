@@ -13,3 +13,6 @@ export GCP_PUBLIC_IP=true              # set to false if you have configured a c
 export GCP_CONTROL_PLANE_MACHINE_TYPE=n1-standard-2
 export GCP_NODE_MACHINE_TYPE=n1-standard-2
 export IMAGE_ID=projects/$GCP_PROJECT/global/images/ubuntu-2204
+
+# Upgrade configuration
+export UPGRADE_STRATEGY=RollingUpgrade

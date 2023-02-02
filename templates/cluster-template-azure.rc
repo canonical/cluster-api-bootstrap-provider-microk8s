@@ -25,3 +25,6 @@ export AZURE_SSH_PUBLIC_KEY_B64=""
 export AZURE_CLUSTER_IDENTITY_SECRET_NAME="cluster-identity-secret"
 export CLUSTER_IDENTITY_NAME="cluster-identity"
 export AZURE_CLUSTER_IDENTITY_SECRET_NAMESPACE="default"
+
+# Upgrade configuration
+export UPGRADE_STRATEGY=RollingUpgrade

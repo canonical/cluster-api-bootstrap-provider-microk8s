@@ -45,6 +45,7 @@ spec:
       name: "${CLUSTER_NAME}-control-plane"
   replicas: ${CONTROL_PLANE_MACHINE_COUNT:=1}
   version: "v${KUBERNETES_VERSION}"
+  upgradeStrategy: "${UPGRADE_STRATEGY}"
 ---
 apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
 kind: AWSMachineTemplate

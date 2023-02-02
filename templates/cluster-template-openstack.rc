@@ -25,3 +25,6 @@ export OPENSTACK_DNS_NAMESERVERS=
 export CONTAINERD_HTTP_PROXY=""
 export CONTAINERD_HTTPS_PROXY=""
 export CONTAINERD_NO_PROXY=""
+
+# Upgrade configuration
+export UPGRADE_STRATEGY=RollingUpgrade
