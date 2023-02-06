@@ -91,6 +91,7 @@ spec:
     spec:
       instanceType: "${GCP_NODE_MACHINE_TYPE}"
       image: "${IMAGE_ID}"
+      publicIP: ${GCP_PUBLIC_IP}
 ---
 apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
 kind: MicroK8sConfigTemplate
