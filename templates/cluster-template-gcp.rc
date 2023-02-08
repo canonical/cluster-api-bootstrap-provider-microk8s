@@ -15,4 +15,4 @@ export GCP_NODE_MACHINE_TYPE=n1-standard-2
 export IMAGE_ID=projects/$GCP_PROJECT/global/images/ubuntu-2204
 
 # Upgrade configuration
-export UPGRADE_STRATEGY=RollingUpgrade
+export UPGRADE_STRATEGY=SmartUpgrade

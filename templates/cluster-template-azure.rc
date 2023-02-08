@@ -27,4 +27,4 @@ export CLUSTER_IDENTITY_NAME="cluster-identity"
 export AZURE_CLUSTER_IDENTITY_SECRET_NAMESPACE="default"
 
 # Upgrade configuration
-export UPGRADE_STRATEGY=RollingUpgrade
+export UPGRADE_STRATEGY=SmartUpgrade

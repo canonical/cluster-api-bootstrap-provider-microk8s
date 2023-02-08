@@ -14,4 +14,4 @@ export AWS_NODE_MACHINE_FLAVOR=t3.large
 export AWS_SSH_KEY_NAME=my-ssh-key
 
 # Upgrade configuration
-export UPGRADE_STRATEGY=RollingUpgrade
+export UPGRADE_STRATEGY=SmartUpgrade
