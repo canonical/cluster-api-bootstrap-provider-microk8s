@@ -54,8 +54,13 @@ func TestBasic(t *testing.T) {
 	t.Run("DeployCluster", func(t *testing.T) { deployCluster(t) })
 	t.Run("DeployMicrobot", func(t *testing.T) { deployMicrobot(t) })
 	t.Run("UpgradeCluster", func(t *testing.T) { upgradeCluster(t) })
+
+	// Important: the cluster is deleted in the Cleanup function
+	// which is called after all subtests are finished.
+	t.Logf("Deleting the cluster")
 }
 
+// setupCheck checks that the environment is ready to run the tests.
 func setupCheck(t testing.TB) {
 	cluster_manifest_file := os.Getenv("CLUSTER_MANIFEST_FILE")
 	if cluster_manifest_file == "" {
@@ -79,6 +84,7 @@ func setupCheck(t testing.TB) {
 	waitForPod(t, "capi-microk8s-control-plane-controller-manager", "capi-microk8s-control-plane-system")
 }
 
+// waitForPod waits for a pod to be available.
 func waitForPod(t testing.TB, pod string, ns string) {
 	attempt := 0
 	maxAttempts := 10
@@ -101,6 +107,7 @@ func waitForPod(t testing.TB, pod string, ns string) {
 	}
 }
 
+// teardownCluster deletes the cluster created by deployCluster.
 func teardownCluster() {
 	command := []string{"kubectl", "get", "cluster", "--no-headers", "-o", "custom-columns=:metadata.name"}
 	cmd := exec.Command(command[0], command[1:]...)
@@ -116,6 +123,7 @@ func teardownCluster() {
 	cmd.Run()
 }
 
+// deployCluster deploys a cluster using the manifest in CLUSTER_MANIFEST_FILE.
 func deployCluster(t testing.TB) {
 	t.Log("Setting up the cluster")
 	command := []string{"kubectl", "apply", "-f", os.Getenv("CLUSTER_MANIFEST_FILE")}
@@ -256,6 +264,7 @@ func deployCluster(t testing.TB) {
 	}
 }
 
+// deployMicrobot deploys a deployment of microbot.
 func deployMicrobot(t testing.TB) {
 	t.Log("Deploying microbot")
 
@@ -290,53 +299,22 @@ func deployMicrobot(t testing.TB) {
 	}
 }
 
+// upgradeCluster upgrades the cluster to a new version based on the upgrade strategy.
 func upgradeCluster(t testing.TB) {
-	version := os.Getenv("CAPI_UPGRADE_VERSION")
-	if version == "" {
-		t.Fatalf("Environment variable CAPI_UPGRADE_VERSION is not set." +
-			"Please set it to the version you want to upgrade to.")
-	}
 
-	control_plane_name := os.Getenv("CAPI_UPGRADE_CP_NAME")
-	if control_plane_name == "" {
-		t.Fatalf("Environment variable CAPI_UPGRADE_CP_NAME is not set." +
-			"Please set it to the name of the control plane you want to upgrade.")
-	}
+	version, control_plane_name, control_plane_type, worker_deployment_name,
+		worker_deployment_type, upgrade_strategy := getUpgradeEnvVars(t)
 
-	control_plane_type := os.Getenv("CAPI_UPGRADE_CP_TYPE")
-	if control_plane_type == "" {
-		t.Fatalf("Environment variable CAPI_UPGRADE_CP_TYPE is not set." +
-			"Please set it to the type of the control plane you want to upgrade.")
-	}
-
-	worker_deployment_name := os.Getenv("CAPI_UPGRADE_MD_NAME")
-	if worker_deployment_name == "" {
-		t.Fatalf("Environment variable CAPI_UPGRADE_MD_NAME is not set." +
-			"Please set it to the name of the machine deployment you want to upgrade.")
-	}
-
-	worker_deployment_type := os.Getenv("CAPI_UPGRADE_MD_TYPE")
-	if worker_deployment_type == "" {
-		t.Fatalf("Environment variable CAPI_UPGRADE_MD_TYPE is not set." +
-			"Please set it to the type of the machine deployment you want to upgrade.")
-	}
-
-	t.Logf("Upgrading cluster to %s", version)
-	// Patch contol plane machine upgrades.
-	command := []string{"kubectl", "patch", "--type=merge", control_plane_type, control_plane_name, "--patch",
-		fmt.Sprintf(`{"spec":{"version":"%s"}}`, version)}
-	cmd := exec.Command(command[0], command[1:]...)
-	outputBytes, err := cmd.CombinedOutput()
+	t.Logf("Upgrading cluster to %s via %s", version, upgrade_strategy)
+	// Patch contol plane machine upgrades based on type of upgrade strategy.
+	outputBytes, err := controlPlanePatch(control_plane_name, control_plane_type, version, upgrade_strategy)
 	if err != nil {
 		t.Error(string(outputBytes))
 		t.Fatalf("Failed to merge the patch to control plane. %s", err)
 	}
 
 	// Patch worker machine upgrades.
-	command = []string{"kubectl", "patch", "--type=merge", worker_deployment_type, worker_deployment_name, "--patch",
-		fmt.Sprintf(`{"spec":{"template":{"spec":{"version":"%s"}}}}`, version)}
-	cmd = exec.Command(command[0], command[1:]...)
-	outputBytes, err = cmd.CombinedOutput()
+	outputBytes, err = workerPatch(worker_deployment_name, worker_deployment_type, version)
 	if err != nil {
 		t.Error(string(outputBytes))
 		t.Fatalf("Failed to merge the patch to the machine deployments. %s", err)
@@ -347,7 +325,7 @@ func upgradeCluster(t testing.TB) {
 	// Now all the machines should be upgraded to the new version.
 	attempt := 0
 	maxAttempts := 60
-	command = []string{"kubectl", "get", "machine", "--no-headers"}
+	command := []string{"kubectl", "get", "machine", "--no-headers"}
 	for {
 		cmd := exec.Command(command[0], command[1:]...)
 		outputBytes, err := cmd.CombinedOutput()
@@ -377,4 +355,66 @@ func upgradeCluster(t testing.TB) {
 			}
 		}
 	}
+}
+
+// controlPlanePatch patches the control plane machines based on the upgrade strategy and version.
+func controlPlanePatch(control_plane_name, control_plane_type, version, upgrade_strategy string) ([]byte, error) {
+	command := []string{"kubectl", "patch", "--type=merge", control_plane_type, control_plane_name, "--patch",
+		fmt.Sprintf(`{"spec":{"version":"%s","upgradeStrategy":"%s"}}`, version, upgrade_strategy)}
+	cmd := exec.Command(command[0], command[1:]...)
+
+	return cmd.CombinedOutput()
+}
+
+// workerPatch patches a given worker machines with the given version.
+func workerPatch(worker_deployment_name, worker_deployment_type, version string) ([]byte, error) {
+	command := []string{"kubectl", "patch", "--type=merge", worker_deployment_type, worker_deployment_name, "--patch",
+		fmt.Sprintf(`{"spec":{"template":{"spec":{"version":"%s"}}}}`, version)}
+	cmd := exec.Command(command[0], command[1:]...)
+
+	return cmd.CombinedOutput()
+}
+
+// getUpgradeEnvVars returns the environment variables needed for the upgrade test.
+func getUpgradeEnvVars(t testing.TB) (version string, control_plane_name string, control_plane_type string,
+	worker_deployment_name string, worker_deployment_type string, upgrade_strategy string) {
+	version = os.Getenv("CAPI_UPGRADE_VERSION")
+	if version == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_VERSION is not set." +
+			"Please set it to the version you want to upgrade to.")
+	}
+
+	control_plane_name = os.Getenv("CAPI_UPGRADE_CP_NAME")
+	if control_plane_name == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_CP_NAME is not set." +
+			"Please set it to the name of the control plane you want to upgrade.")
+	}
+
+	control_plane_type = os.Getenv("CAPI_UPGRADE_CP_TYPE")
+	if control_plane_type == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_CP_TYPE is not set." +
+			"Please set it to the type of the control plane you want to upgrade.")
+	}
+
+	worker_deployment_name = os.Getenv("CAPI_UPGRADE_MD_NAME")
+	if worker_deployment_name == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_MD_NAME is not set." +
+			"Please set it to the name of the machine deployment you want to upgrade.")
+	}
+
+	worker_deployment_type = os.Getenv("CAPI_UPGRADE_MD_TYPE")
+	if worker_deployment_type == "" {
+		t.Fatalf("Environment variable CAPI_UPGRADE_MD_TYPE is not set." +
+			"Please set it to the type of the machine deployment you want to upgrade.")
+	}
+
+	upgrade_strategy = os.Getenv("UPGRADE_STRATEGY")
+	if upgrade_strategy == "" {
+		upgrade_strategy = "SmartUpgrade"
+		t.Logf("Environment variable CAPI_UPGRADE_STRATEGY is not set." +
+			"Default value SmartUpgrade will be used.")
+	}
+
+	return version, control_plane_name, control_plane_type, worker_deployment_name,
+		worker_deployment_type, upgrade_strategy
 }
