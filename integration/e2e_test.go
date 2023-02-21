@@ -48,20 +48,6 @@ func init() {
 // kubectl and clusterctl have to be avaibale in the caller's path.
 // kubectl should be setup so it uses the kubeconfig of the management cluster by default.
 func TestBasic(t *testing.T) {
-	setupCheck(t)
-	t.Cleanup(teardownCluster)
-
-	t.Run("DeployCluster", func(t *testing.T) { deployCluster(t) })
-	t.Run("DeployMicrobot", func(t *testing.T) { deployMicrobot(t) })
-	t.Run("UpgradeCluster", func(t *testing.T) { upgradeCluster(t) })
-
-	// Important: the cluster is deleted in the Cleanup function
-	// which is called after all subtests are finished.
-	t.Logf("Deleting the cluster")
-}
-
-// setupCheck checks that the environment is ready to run the tests.
-func setupCheck(t testing.TB) {
 	cluster_manifest_file := os.Getenv("CLUSTER_MANIFEST_FILE")
 	if cluster_manifest_file == "" {
 		t.Fatalf("Environment variable CLUSTER_MANIFEST_FILE is not set. " +
@@ -69,6 +55,44 @@ func setupCheck(t testing.TB) {
 	}
 	t.Logf("Cluster to setup is in %s", cluster_manifest_file)
 
+	setupCheck(t)
+	t.Cleanup(teardownCluster)
+
+	t.Run("DeployCluster", func(t *testing.T) { deployCluster(t, os.Getenv("CLUSTER_MANIFEST_FILE")) })
+	t.Run("DeployMicrobot", func(t *testing.T) { deployMicrobot(t) })
+	t.Run("UpgradeClusterRollout", func(t *testing.T) { upgradeCluster(t, "RollingUpgrade") })
+
+	// Important: the cluster is deleted in the Cleanup function
+	// which is called after all subtests are finished.
+	t.Logf("Deleting the cluster")
+}
+
+// TestInPlaceUpgrade waits for the target cluster to deploy and start a 30 pod deployment.
+// The CLUSTER_INPLACE_MANIFEST_FILE environment variable should point to a manifest with the target cluster
+// This cluster will be upgraded via an in-place upgrade.
+func TestInPlaceUpgrade(t *testing.T) {
+	cluster_inplace_manifest_file := os.Getenv("CLUSTER_INPLACE_MANIFEST_FILE")
+	if cluster_inplace_manifest_file == "" {
+		t.Fatalf("Environment variable CLUSTER_INPLACE_MANIFEST_FILE is not set. " +
+			"CLUSTER_INPLACE_MANIFEST_FILE is expected to hold the PATH to a cluster manifest for in-place upgrades.")
+	}
+	t.Logf("Cluster for in-place upgrade test setup is in %s", cluster_inplace_manifest_file)
+
+	setupCheck(t)
+	t.Cleanup(teardownCluster)
+
+	t.Run("DeployCluster", func(t *testing.T) { deployCluster(t, os.Getenv("CLUSTER_INPLACE_MANIFEST_FILE")) })
+	t.Run("DeployMicrobot", func(t *testing.T) { deployMicrobot(t) })
+	t.Run("UpgradeClusterInplace", func(t *testing.T) { upgradeCluster(t, "InPlaceUpgrade") })
+
+	// Important: the cluster is deleted in the Cleanup function
+	// which is called after all subtests are finished.
+	t.Logf("Deleting the cluster")
+
+}
+
+// setupCheck checks that the environment is ready to run the tests.
+func setupCheck(t testing.TB) {
 	_, err := exec.LookPath("kubectl")
 	if err != nil {
 		t.Fatalf("Please make sure kubectl is in your PATH. %s", err)
@@ -124,9 +148,9 @@ func teardownCluster() {
 }
 
 // deployCluster deploys a cluster using the manifest in CLUSTER_MANIFEST_FILE.
-func deployCluster(t testing.TB) {
+func deployCluster(t testing.TB, cluster_manifest_file string) {
 	t.Log("Setting up the cluster")
-	command := []string{"kubectl", "apply", "-f", os.Getenv("CLUSTER_MANIFEST_FILE")}
+	command := []string{"kubectl", "apply", "-f", cluster_manifest_file}
 	cmd := exec.Command(command[0], command[1:]...)
 	outputBytes, err := cmd.CombinedOutput()
 	if err != nil {
@@ -300,10 +324,10 @@ func deployMicrobot(t testing.TB) {
 }
 
 // upgradeCluster upgrades the cluster to a new version based on the upgrade strategy.
-func upgradeCluster(t testing.TB) {
+func upgradeCluster(t testing.TB, upgrade_strategy string) {
 
 	version, control_plane_name, control_plane_type, worker_deployment_name,
-		worker_deployment_type, upgrade_strategy := getUpgradeEnvVars(t)
+		worker_deployment_type := getUpgradeEnvVars(t)
 
 	t.Logf("Upgrading cluster to %s via %s", version, upgrade_strategy)
 	// Patch contol plane machine upgrades based on type of upgrade strategy.
@@ -377,7 +401,7 @@ func workerPatch(worker_deployment_name, worker_deployment_type, version string)
 
 // getUpgradeEnvVars returns the environment variables needed for the upgrade test.
 func getUpgradeEnvVars(t testing.TB) (version string, control_plane_name string, control_plane_type string,
-	worker_deployment_name string, worker_deployment_type string, upgrade_strategy string) {
+	worker_deployment_name string, worker_deployment_type string) {
 	version = os.Getenv("CAPI_UPGRADE_VERSION")
 	if version == "" {
 		t.Fatalf("Environment variable CAPI_UPGRADE_VERSION is not set." +
@@ -408,13 +432,5 @@ func getUpgradeEnvVars(t testing.TB) (version string, control_plane_name string,
 			"Please set it to the type of the machine deployment you want to upgrade.")
 	}
 
-	upgrade_strategy = os.Getenv("UPGRADE_STRATEGY")
-	if upgrade_strategy == "" {
-		upgrade_strategy = "SmartUpgrade"
-		t.Logf("Environment variable CAPI_UPGRADE_STRATEGY is not set." +
-			"Default value SmartUpgrade will be used.")
-	}
-
-	return version, control_plane_name, control_plane_type, worker_deployment_name,
-		worker_deployment_type, upgrade_strategy
+	return version, control_plane_name, control_plane_type, worker_deployment_name, worker_deployment_type
 }
