@@ -30,11 +30,8 @@ The integration/e2e tests have the following prerequisites:
     # Change the control plane and worker machine count to desired values for in-place upgrades tests and create a new cluster manifest.
     CONTROL_PLANE_MACHINE_COUNT=1
     WORKER_MACHINE_COUNT=1
-    CLUSTER_NAME=test-ci-cluster-inplace
-    CAPI_UPGRADE_MD_NAME=${CLUSTER_NAME}-md-0
-    CAPI_UPGRADE_CP_NAME=${CLUSTER_NAME}-control-plane
     clusterctl generate cluster ${CLUSTER_NAME} --from "templates/cluster-template-aws.yaml" --kubernetes-version 1.25.0 > cluster-inplace.yaml
-    CLUSTER_INPLACE_MANIFEST_FILE=$PWD/cluster-inplace.yaml
+    export CLUSTER_INPLACE_MANIFEST_FILE=$PWD/cluster-inplace.yaml
 
   ```
 
