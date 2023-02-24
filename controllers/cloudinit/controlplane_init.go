@@ -57,6 +57,10 @@ type ControlPlaneInitInput struct {
 	Confinement string
 	// RiskLevel specifies the risk level (strict, candidate, beta, edge) for the snap channels.
 	RiskLevel string
+	// SnapstoreProxyDomain specifies the domain of the snapstore proxy if one is to be used.
+	SnapstoreProxyDomain string
+	// SnapstoreProxyId specifies the snapstore proxy ID if one is to be used.
+	SnapstoreProxyId string
 	// ExtraWriteFiles is a list of extra files to inject with cloud-init.
 	ExtraWriteFiles []File
 	// ExtraKubeletArgs is a list of arguments to add to kubelet.
@@ -122,6 +126,7 @@ func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
 	}
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
 		"set -x",
+		fmt.Sprintf("%s %q %q", scriptPath(snapstoreProxyScript), input.SnapstoreProxyDomain, input.SnapstoreProxyId),
 		scriptPath(disableHostServicesScript),
 		fmt.Sprintf("%s %q", scriptPath(installMicroK8sScript), installArgs),
 		fmt.Sprintf("%s %q %q %q", scriptPath(configureContainerdProxyScript), input.ContainerdHTTPProxy, input.ContainerdHTTPSProxy, input.ContainerdNoProxy),

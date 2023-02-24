@@ -34,6 +34,9 @@ const (
 	// cloudConfigTemplate is the template to render the cloud-config for the instances.
 	cloudConfigTemplate script = "cloud-config-template"
 
+	// snapstoreProxyScript configures a snapstore proxy.
+	snapstoreProxyScript script = "00-configure-snapstore-proxy.sh"
+
 	// disableHostServicesScript disables services like containerd or kubelet from the host OS image.
 	disableHostServicesScript script = "00-disable-host-services.sh"
 
@@ -72,6 +75,7 @@ const (
 )
 
 var allScripts = []script{
+	snapstoreProxyScript,
 	disableHostServicesScript,
 	installMicroK8sScript,
 	configureCertLB,

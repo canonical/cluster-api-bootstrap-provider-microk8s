@@ -81,6 +81,14 @@ type InitConfiguration struct {
 	// +kubebuilder:default:=stable
 	RiskLevel string `json:"riskLevel,omitempty"`
 
+	// The snap store proxy domain
+	// +optional
+	SnapstoreProxyDomain string `json:"snapstoreProxyDomain,omitempty"`
+
+	// The snap store proxy ID
+	// +optional
+	SnapstoreProxyId string `json:"snapstoreProxyId,omitempty"`
+
 	// ExtraWriteFiles is a list of extra files to inject with cloud-init.
 	// +optional
 	ExtraWriteFiles []CloudInitWriteFile `json:"extraWriteFiles,omitempty"`

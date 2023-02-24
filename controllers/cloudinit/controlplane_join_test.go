@@ -43,6 +43,7 @@ func TestControlPlaneJoin(t *testing.T) {
 
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
+			`/capi-scripts/00-configure-snapstore-proxy.sh "" ""`,
 			`/capi-scripts/00-disable-host-services.sh`,
 			`/capi-scripts/00-install-microk8s.sh "--channel 1.25 --classic"`,
 			`/capi-scripts/10-configure-containerd-proxy.sh "" "" ""`,

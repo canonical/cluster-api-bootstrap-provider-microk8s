@@ -145,6 +145,12 @@ spec:
                     - beta
                     - edge
                     type: string
+                  snapstoreProxyDomain:
+                    description: The snap store proxy domain
+                    type: string
+                  snapstoreProxyId:
+                    description: The snap store proxy ID
+                    type: string
                 type: object
             type: object
           status:
