@@ -36,6 +36,8 @@ spec:
       addons:
         - dns
         - ingress
+      riskLevel: "${SNAP_RISKLEVEL:=}"
+      confinement: "${SNAP_CONFINEMENT:=}"
     clusterConfiguration:
       portCompatibilityRemap: true
   machineTemplate:
@@ -103,3 +105,6 @@ spec:
     spec:
       clusterConfiguration:
         portCompatibilityRemap: true
+      initConfiguration:
+        riskLevel: "${SNAP_RISKLEVEL:=}"
+        confinement: "${SNAP_CONFINEMENT:=}"

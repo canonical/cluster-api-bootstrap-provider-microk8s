@@ -26,5 +26,9 @@ export CONTAINERD_HTTP_PROXY=""
 export CONTAINERD_HTTPS_PROXY=""
 export CONTAINERD_NO_PROXY=""
 
+# (optional) Snap risk level and confinement
+export SNAP_RISKLEVEL=""
+export SNAP_CONFINEMENT=""
+
 # Upgrade configuration
 export UPGRADE_STRATEGY=SmartUpgrade
