@@ -6,8 +6,6 @@
 # Assumptions:
 #   - snapd is installed
 
-set -x
-
 if [ "$#" -ne 2 ] || [ -z "${1}" ] || [ -z "${2}" ] ; then
   echo "Using the default snapstore"
   exit 0
