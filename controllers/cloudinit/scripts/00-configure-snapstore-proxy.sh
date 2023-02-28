@@ -6,17 +6,21 @@
 # Assumptions:
 #   - snapd is installed
 
+set -x
+
 if [ "$#" -ne 2 ] || [ -z "${1}" ] || [ -z "${2}" ] ; then
   echo "Using the default snapstore"
   exit 0
 fi
 
-while ! snap install curl; do
-  echo "Failed to install curl, will retry"
-  sleep 5
-done
+if ! type -P curl ; then
+  while ! snap install curl; do
+    echo "Failed to install curl, will retry"
+    sleep 5
+  done
+fi
 
-while ! /snap/bin/curl -sL http://"${1}"/v2/auth/store/assertions | snap ack /dev/stdin ; do
+while ! curl -sL http://"${1}"/v2/auth/store/assertions | snap ack /dev/stdin ; do
   echo "Failed to ACK store assertions, will retry"
   sleep 5
 done
