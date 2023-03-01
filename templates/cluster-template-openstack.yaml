@@ -42,6 +42,8 @@ spec:
       httpProxy: "${CONTAINERD_HTTP_PROXY:=}"
       httpsProxy: "${CONTAINERD_HTTPS_PROXY:=}"
       noProxy: "${CONTAINERD_NO_PROXY:=}"
+      riskLevel: "${SNAP_RISKLEVEL:=}"
+      confinement: "${SNAP_CONFINEMENT:=}"
     clusterConfiguration:
       portCompatibilityRemap: true
   machineTemplate:
@@ -120,3 +122,5 @@ spec:
         httpProxy: "${CONTAINERD_HTTP_PROXY:=}"
         httpsProxy: "${CONTAINERD_HTTPS_PROXY:=}"
         noProxy: "${CONTAINERD_NO_PROXY:=}"
+        riskLevel: "${SNAP_RISKLEVEL:=}"
+        confinement: "${SNAP_CONFINEMENT:=}"

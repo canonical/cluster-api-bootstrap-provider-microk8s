@@ -304,6 +304,8 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		ContainerdNoProxy:    microk8sConfig.Spec.InitConfiguration.NoProxy,
 		SnapstoreProxyDomain: microk8sConfig.Spec.InitConfiguration.SnapstoreProxyDomain,
 		SnapstoreProxyId:     microk8sConfig.Spec.InitConfiguration.SnapstoreProxyId,
+		Confinement:          microk8sConfig.Spec.InitConfiguration.Confinement,
+		RiskLevel:            microk8sConfig.Spec.InitConfiguration.RiskLevel,
 		ExtraWriteFiles:      cloudinit.WriteFilesFromAPI(microk8sConfig.Spec.InitConfiguration.ExtraWriteFiles),
 		ExtraKubeletArgs:     microk8sConfig.Spec.InitConfiguration.ExtraKubeletArgs,
 	}
@@ -400,6 +402,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		ContainerdNoProxy:    microk8sConfig.Spec.InitConfiguration.NoProxy,
 		SnapstoreProxyDomain: microk8sConfig.Spec.InitConfiguration.SnapstoreProxyDomain,
 		SnapstoreProxyId:     microk8sConfig.Spec.InitConfiguration.SnapstoreProxyId,
+		RiskLevel:            microk8sConfig.Spec.InitConfiguration.RiskLevel,
+		Confinement:          microk8sConfig.Spec.InitConfiguration.Confinement,
 		ExtraWriteFiles:      cloudinit.WriteFilesFromAPI(microk8sConfig.Spec.InitConfiguration.ExtraWriteFiles),
 		ExtraKubeletArgs:     microk8sConfig.Spec.InitConfiguration.ExtraKubeletArgs,
 	}
@@ -493,6 +497,10 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		workerInput.ContainerdNoProxy = c.NoProxy
 		workerInput.SnapstoreProxyDomain = c.SnapstoreProxyDomain
 		workerInput.SnapstoreProxyId = c.SnapstoreProxyId
+
+		workerInput.Confinement = c.Confinement
+		workerInput.RiskLevel = c.RiskLevel
+
 		workerInput.ExtraKubeletArgs = c.ExtraKubeletArgs
 		workerInput.ExtraWriteFiles = cloudinit.WriteFilesFromAPI(c.ExtraWriteFiles)
 	}

@@ -14,5 +14,10 @@ export GCP_CONTROL_PLANE_MACHINE_TYPE=n1-standard-2
 export GCP_NODE_MACHINE_TYPE=n1-standard-2
 export IMAGE_ID=projects/$GCP_PROJECT/global/images/ubuntu-2204
 
+# (optional) Snap risk level and confinement
+export SNAP_RISKLEVEL=""
+export SNAP_CONFINEMENT=""
+
+
 # Upgrade configuration
 export UPGRADE_STRATEGY=SmartUpgrade

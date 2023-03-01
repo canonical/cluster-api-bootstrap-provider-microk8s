@@ -26,5 +26,10 @@ export AZURE_CLUSTER_IDENTITY_SECRET_NAME="cluster-identity-secret"
 export CLUSTER_IDENTITY_NAME="cluster-identity"
 export AZURE_CLUSTER_IDENTITY_SECRET_NAMESPACE="default"
 
+# (optional) Snap risk level and confinement
+export SNAP_RISKLEVEL=""
+export SNAP_CONFINEMENT=""
+
+
 # Upgrade configuration
 export UPGRADE_STRATEGY=SmartUpgrade

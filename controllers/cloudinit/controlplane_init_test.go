@@ -38,6 +38,7 @@ func TestControlPlaneInit(t *testing.T) {
 			IPinIP:               true,
 			Token:                strings.Repeat("a", 32),
 			TokenTTL:             10000,
+			Confinement:          "classic",
 		})
 		g.Expect(err).NotTo(HaveOccurred())
 
