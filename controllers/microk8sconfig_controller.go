@@ -308,6 +308,8 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		RiskLevel:            microk8sConfig.Spec.InitConfiguration.RiskLevel,
 		ExtraWriteFiles:      cloudinit.WriteFilesFromAPI(microk8sConfig.Spec.InitConfiguration.ExtraWriteFiles),
 		ExtraKubeletArgs:     microk8sConfig.Spec.InitConfiguration.ExtraKubeletArgs,
+		SnapstoreHTTPProxy:   microk8sConfig.Spec.InitConfiguration.SnapstoreHTTPProxy,
+		SnapstoreHTTPSProxy:  microk8sConfig.Spec.InitConfiguration.SnapstoreHTTPSProxy,
 	}
 	if controlPlaneInput.TokenTTL == 0 {
 		controlPlaneInput.TokenTTL = 315569260
@@ -406,6 +408,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		Confinement:          microk8sConfig.Spec.InitConfiguration.Confinement,
 		ExtraWriteFiles:      cloudinit.WriteFilesFromAPI(microk8sConfig.Spec.InitConfiguration.ExtraWriteFiles),
 		ExtraKubeletArgs:     microk8sConfig.Spec.InitConfiguration.ExtraKubeletArgs,
+		SnapstoreHTTPProxy:   microk8sConfig.Spec.InitConfiguration.SnapstoreHTTPProxy,
+		SnapstoreHTTPSProxy:  microk8sConfig.Spec.InitConfiguration.SnapstoreHTTPSProxy,
 	}
 	if controlPlaneInput.TokenTTL == 0 {
 		controlPlaneInput.TokenTTL = 315569260
@@ -497,6 +501,8 @@ func (r *MicroK8sConfigReconciler) handleJoiningWorkerNode(ctx context.Context, 
 		workerInput.ContainerdNoProxy = c.NoProxy
 		workerInput.SnapstoreProxyDomain = c.SnapstoreProxyDomain
 		workerInput.SnapstoreProxyId = c.SnapstoreProxyId
+		workerInput.SnapstoreHTTPProxy = c.SnapstoreHTTPProxy
+		workerInput.SnapstoreHTTPSProxy = c.SnapstoreHTTPSProxy
 
 		workerInput.Confinement = c.Confinement
 		workerInput.RiskLevel = c.RiskLevel

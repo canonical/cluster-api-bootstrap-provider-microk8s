@@ -40,6 +40,7 @@ func TestWorkerJoin(t *testing.T) {
 
 		g.Expect(cloudConfig.RunCommands).To(Equal([]string{
 			`set -x`,
+			`/capi-scripts/00-configure-snapstore-http-proxy.sh "" ""`,
 			`/capi-scripts/00-configure-snapstore-proxy.sh "" ""`,
 			`/capi-scripts/00-disable-host-services.sh`,
 			`/capi-scripts/00-install-microk8s.sh "--channel 1.24 --classic"`,

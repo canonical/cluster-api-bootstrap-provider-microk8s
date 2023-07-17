@@ -37,6 +37,9 @@ const (
 	// snapstoreProxyScript configures a snapstore proxy.
 	snapstoreProxyScript script = "00-configure-snapstore-proxy.sh"
 
+	// snapstoreHTTPProxyScript configures HTTP and HTTPS proxy to access the snap store.
+	snapstoreHTTPProxyScript script = "00-configure-snapstore-http-proxy.sh"
+
 	// disableHostServicesScript disables services like containerd or kubelet from the host OS image.
 	disableHostServicesScript script = "00-disable-host-services.sh"
 
@@ -76,6 +79,7 @@ const (
 
 var allScripts = []script{
 	snapstoreProxyScript,
+	snapstoreHTTPProxyScript,
 	disableHostServicesScript,
 	installMicroK8sScript,
 	configureCertLB,

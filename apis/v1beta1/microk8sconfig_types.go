@@ -89,6 +89,14 @@ type InitConfiguration struct {
 	// +optional
 	SnapstoreProxyId string `json:"snapstoreProxyId,omitempty"`
 
+	// Optional http proxy configuration for the snap store
+	// +optional
+	SnapstoreHTTPProxy string `json:"snapstoreHTTPProxy,omitempty"`
+
+	// Optional https proxy configuration for the snap store
+	// +optional
+	SnapstoreHTTPSProxy string `json:"snapstoreHTTPSProxy,omitempty"`
+
 	// ExtraWriteFiles is a list of extra files to inject with cloud-init.
 	// +optional
 	ExtraWriteFiles []CloudInitWriteFile `json:"extraWriteFiles,omitempty"`

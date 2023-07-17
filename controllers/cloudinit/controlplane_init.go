@@ -65,6 +65,10 @@ type ControlPlaneInitInput struct {
 	ExtraWriteFiles []File
 	// ExtraKubeletArgs is a list of arguments to add to kubelet.
 	ExtraKubeletArgs []string
+	// SnapstoreHTTPProxy is http_proxy configuration for snap store.
+	SnapstoreHTTPProxy string
+	// SnapstoreHTTPSProxy is https_proxy configuration for snap store.
+	SnapstoreHTTPSProxy string
 }
 
 func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
@@ -126,6 +130,7 @@ func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
 	}
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands,
 		"set -x",
+		fmt.Sprintf("%s %q %q", scriptPath(snapstoreHTTPProxyScript), input.SnapstoreHTTPProxy, input.SnapstoreHTTPSProxy),
 		fmt.Sprintf("%s %q %q", scriptPath(snapstoreProxyScript), input.SnapstoreProxyDomain, input.SnapstoreProxyId),
 		scriptPath(disableHostServicesScript),
 		fmt.Sprintf("%s %q", scriptPath(installMicroK8sScript), installArgs),
