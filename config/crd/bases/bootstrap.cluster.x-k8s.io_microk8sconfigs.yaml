@@ -145,6 +145,12 @@ spec:
                     - beta
                     - edge
                     type: string
+                  snapstoreHTTPProxy:
+                    description: Optional http proxy configuration for the snap store
+                    type: string
+                  snapstoreHTTPSProxy:
+                    description: Optional https proxy configuration for the snap store
+                    type: string
                   snapstoreProxyDomain:
                     description: The snap store proxy domain
                     type: string
