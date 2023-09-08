@@ -20,9 +20,6 @@ metadata:
   name: ${CLUSTER_NAME}
 spec:
   dnsDomain: ${MAAS_DNS_DOMAIN}
-  controlPlaneEndpoint:
-    host: ${CONTROL_PLANE_ENDPOINT_IP}
-    port: 6443
 ---
 apiVersion: controlplane.cluster.x-k8s.io/v1beta1
 kind: MicroK8sControlPlane
@@ -36,63 +33,6 @@ spec:
       addons:
         - dns
         - ingress
-      extraKubeletArgs:
-        - --pod-manifest-path=/var/snap/microk8s/common/manifests
-      extraWriteFiles:
-        - path: /var/snap/microk8s/common/manifests/kube-vip.yaml
-          owner: root:root
-          permissions: '0400'
-          content: |
-            apiVersion: v1
-            kind: Pod
-            metadata:
-              name: kube-vip
-              namespace: kube-system
-            spec:
-              containers:
-              - args:
-                - manager
-                env:
-                - name: cp_enable
-                  value: "true"
-                - name: vip_interface
-                  value: ${VIP_NETWORK_INTERFACE=""}
-                - name: address
-                  value: ${CONTROL_PLANE_ENDPOINT_IP}
-                - name: port
-                  value: "6443"
-                - name: vip_arp
-                  value: "true"
-                - name: vip_leaderelection
-                  value: "true"
-                - name: vip_leaseduration
-                  value: "15"
-                - name: vip_renewdeadline
-                  value: "10"
-                - name: vip_retryperiod
-                  value: "2"
-                image: ghcr.io/kube-vip/kube-vip:v0.5.5
-                imagePullPolicy: IfNotPresent
-                name: kube-vip
-                resources: {}
-                securityContext:
-                  capabilities:
-                    add:
-                    - NET_ADMIN
-                    - NET_RAW
-                volumeMounts:
-                - mountPath: /etc/kubernetes/admin.conf
-                  name: kubeconfig
-              hostAliases:
-              - hostnames:
-                - kubernetes
-                ip: 127.0.0.1
-              hostNetwork: true
-              volumes:
-              - hostPath:
-                  path: /var/snap/microk8s/current/credentials/client.config
-                  type: File
-                name: kubeconfig
     clusterConfiguration:
       portCompatibilityRemap: true
   machineTemplate:
@@ -154,10 +94,4 @@ metadata:
   name: "${CLUSTER_NAME}-md-0"
 spec:
   template:
-    spec:
-      initConfiguration:
-        extraWriteFiles:
-          - path: /var/snap/microk8s/common/manifests/.keep
-            owner: root:root
-            permissions: '0400'
-            content: ""
+    spec: {}
