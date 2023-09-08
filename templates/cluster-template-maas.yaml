@@ -1,0 +1,163 @@
+# Based on https://github.com/spectrocloud/cluster-api-provider-maas/blob/v4.0.2-spectro/templates/cluster-template.yaml
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: MaasCluster
+    name: ${CLUSTER_NAME}
+  controlPlaneRef:
+    kind: MicroK8sControlPlane
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    name: ${CLUSTER_NAME}-control-plane
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: MaasCluster
+metadata:
+  name: ${CLUSTER_NAME}
+spec:
+  dnsDomain: ${MAAS_DNS_DOMAIN}
+  controlPlaneEndpoint:
+    host: ${CONTROL_PLANE_ENDPOINT_IP}
+    port: 6443
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: MicroK8sControlPlane
+metadata:
+  name: "${CLUSTER_NAME}-control-plane"
+spec:
+  controlPlaneConfig:
+    initConfiguration:
+      joinTokenTTLInSecs: 9000
+      IPinIP: true
+      addons:
+        - dns
+        - ingress
+      extraKubeletArgs:
+        - --pod-manifest-path=/var/snap/microk8s/common/manifests
+      extraWriteFiles:
+        - path: /var/snap/microk8s/common/manifests/kube-vip.yaml
+          owner: root:root
+          permissions: '0400'
+          content: |
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              name: kube-vip
+              namespace: kube-system
+            spec:
+              containers:
+              - args:
+                - manager
+                env:
+                - name: cp_enable
+                  value: "true"
+                - name: vip_interface
+                  value: ${VIP_NETWORK_INTERFACE=""}
+                - name: address
+                  value: ${CONTROL_PLANE_ENDPOINT_IP}
+                - name: port
+                  value: "6443"
+                - name: vip_arp
+                  value: "true"
+                - name: vip_leaderelection
+                  value: "true"
+                - name: vip_leaseduration
+                  value: "15"
+                - name: vip_renewdeadline
+                  value: "10"
+                - name: vip_retryperiod
+                  value: "2"
+                image: ghcr.io/kube-vip/kube-vip:v0.5.5
+                imagePullPolicy: IfNotPresent
+                name: kube-vip
+                resources: {}
+                securityContext:
+                  capabilities:
+                    add:
+                    - NET_ADMIN
+                    - NET_RAW
+                volumeMounts:
+                - mountPath: /etc/kubernetes/admin.conf
+                  name: kubeconfig
+              hostAliases:
+              - hostnames:
+                - kubernetes
+                ip: 127.0.0.1
+              hostNetwork: true
+              volumes:
+              - hostPath:
+                  path: /var/snap/microk8s/current/credentials/client.config
+                  type: File
+                name: kubeconfig
+    clusterConfiguration:
+      portCompatibilityRemap: true
+  machineTemplate:
+    infrastructureTemplate:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: MaasMachineTemplate
+      name: "${CLUSTER_NAME}-control-plane"
+  replicas: ${CONTROL_PLANE_MACHINE_COUNT:=1}
+  version: "v${KUBERNETES_VERSION}"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: MaasMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-control-plane"
+spec:
+  template:
+    spec:
+      minCPU: ${CONTROL_PLANE_MACHINE_MINCPU}
+      minMemory: ${CONTROL_PLANE_MACHINE_MINMEMORY}
+      image: ${CONTROL_PLANE_MACHINE_IMAGE}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  clusterName: "${CLUSTER_NAME}"
+  replicas: ${WORKER_MACHINE_COUNT:=1}
+  selector:
+    matchLabels:
+  template:
+    spec:
+      clusterName: "${CLUSTER_NAME}"
+      version: "${KUBERNETES_VERSION}"
+      bootstrap:
+        configRef:
+          name: "${CLUSTER_NAME}-md-0"
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: MicroK8sConfigTemplate
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: MaasMachineTemplate
+        name: "${CLUSTER_NAME}-md-0"
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: MaasMachineTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  template:
+    spec:
+      minCPU: ${WORKER_MACHINE_MINCPU}
+      minMemory: ${WORKER_MACHINE_MINMEMORY}
+      image: ${WORKER_MACHINE_IMAGE}
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: MicroK8sConfigTemplate
+metadata:
+  name: "${CLUSTER_NAME}-md-0"
+spec:
+  template:
+    spec:
+      initConfiguration:
+        extraWriteFiles:
+          - path: /var/snap/microk8s/common/manifests/.keep
+            owner: root:root
+            permissions: '0400'
+            content: ""

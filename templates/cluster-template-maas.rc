@@ -1,0 +1,20 @@
+# Kubernetes cluster configuration
+export KUBERNETES_VERSION=1.27.0
+export CONTROL_PLANE_MACHINE_COUNT=1
+export WORKER_MACHINE_COUNT=1
+
+# kube-vip IP address (ensure address is not in DHCP range)
+export CONTROL_PLANE_ENDPOINT_IP=10.172.105.100
+
+# MaaS domain to use
+export MAAS_DNS_DOMAIN="maas"
+
+# Control plane machine configuration
+export CONTROL_PLANE_MACHINE_MINCPU="1"
+export CONTROL_PLANE_MACHINE_MINMEMORY="2"
+export CONTROL_PLANE_MACHINE_IMAGE="ubuntu"
+
+# Worker machine configuration
+export WORKER_MACHINE_MINCPU="1"
+export WORKER_MACHINE_MINMEMORY="2"
+export WORKER_MACHINE_IMAGE="ubuntu"
