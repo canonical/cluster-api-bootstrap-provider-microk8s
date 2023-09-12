@@ -15,3 +15,7 @@ export CONTROL_PLANE_MACHINE_IMAGE="u-2204-k-1261-0"
 export WORKER_MACHINE_MINCPU="1"
 export WORKER_MACHINE_MINMEMORY="2048"
 export WORKER_MACHINE_IMAGE="u-2204-k-1261-0"
+
+# (optional) Configure resource pools for control plane and worker machines
+# export CONTROL_PLANE_MACHINE_RESOURCEPOOL="kvm-pool"
+# export WORKER_MACHINE_RESOURCEPOOL="bare-metal-pool"
