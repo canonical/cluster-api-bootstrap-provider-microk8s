@@ -1,4 +1,4 @@
-# Based on: https://github.com/kubernetes-sigs/cluster-api-provider-openstack/releases/download/v0.6.3/cluster-template.yaml
+# Based on: https://github.com/kubernetes-sigs/cluster-api-provider-openstack/releases/download/v0.7.3/cluster-template.yaml
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: Cluster
@@ -19,6 +19,8 @@ kind: OpenStackCluster
 metadata:
   name: ${CLUSTER_NAME}
 spec:
+  apiServerLoadBalancer:
+    enabled: true
   cloudName: ${OPENSTACK_CLOUD}
   identityRef:
     name: ${OPENSTACK_CLOUD_CONFIG_SECRET_NAME}
