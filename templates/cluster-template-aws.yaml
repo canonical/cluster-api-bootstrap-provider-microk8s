@@ -20,7 +20,7 @@ metadata:
   name: ${CLUSTER_NAME}
 spec:
   region: ${AWS_REGION}
-  imageLookupBaseOS: ubuntu-20.04
+  imageLookupBaseOS: ${IMAGE_BASE_OS:=ubuntu-18.04}
   sshKeyName: ${AWS_SSH_KEY_NAME}
   bastion:
     enabled: ${AWS_CREATE_BASTION:=false}
