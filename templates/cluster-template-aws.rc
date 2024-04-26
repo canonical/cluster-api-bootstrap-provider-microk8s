@@ -6,6 +6,11 @@ export WORKER_MACHINE_COUNT=1
 # AWS region
 export AWS_REGION="eu-west-1"
 
+# AWS image
+# Use clusterawsadm ami list to verify there is a AMI that
+# matches your desired base os and kubernetes version.
+export AWS_IMAGE_LOOKUP_BASE_OS=
+
 # AWS machine configuration
 export AWS_CREATE_BASTION=true
 export AWS_PUBLIC_IP=false
