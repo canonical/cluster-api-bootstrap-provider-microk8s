@@ -32,3 +32,5 @@ while ! snap set core proxy.store="${3}" ; do
   echo "Failed to configure snapd with store ID, will retry"
   sleep 5
 done
+
+systemctl restart snapd
