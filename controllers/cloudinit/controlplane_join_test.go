@@ -28,7 +28,9 @@ func TestControlPlaneJoin(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		g := NewWithT(t)
 
+		authToken := "capi-auth-token"
 		cloudConfig, err := cloudinit.NewJoinControlPlane(&cloudinit.ControlPlaneJoinInput{
+			AuthToken:            authToken,
 			ControlPlaneEndpoint: "k8s.my-domain.com",
 			KubernetesVersion:    "v1.25.2",
 			ClusterAgentPort:     "30000",
@@ -59,6 +61,15 @@ func TestControlPlaneJoin(t *testing.T) {
 			`/capi-scripts/10-configure-apiserver.sh`,
 			`microk8s add-node --token-ttl 10000 --token "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"`,
 		}))
+
+		g.Expect(cloudConfig.WriteFiles).To(ContainElements(
+			cloudinit.File{
+				Content:     authToken,
+				Path:        cloudinit.CAPIAuthTokenPath,
+				Permissions: "0600",
+				Owner:       "root:root",
+			},
+		))
 
 		_, err = cloudinit.GenerateCloudConfig(cloudConfig)
 		g.Expect(err).ToNot(HaveOccurred())

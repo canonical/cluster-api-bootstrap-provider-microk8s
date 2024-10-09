@@ -27,6 +27,8 @@ import (
 
 // ControlPlaneJoinInput defines the context needed to generate a controlplane instance to join a cluster.
 type ControlPlaneJoinInput struct {
+	// AuthToken will be used for authenticating CAPI requests.
+	AuthToken string
 	// ControlPlaneEndpoint is the control plane endpoint of the cluster.
 	ControlPlaneEndpoint string
 	// Token is the token that will be used for joining other nodes to the cluster.
@@ -109,6 +111,12 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 	}
 
 	cloudConfig := NewBaseCloudConfig()
+	cloudConfig.WriteFiles = append(cloudConfig.WriteFiles, File{
+		Content:     input.AuthToken,
+		Path:        CAPIAuthTokenPath,
+		Permissions: "0600",
+		Owner:       "root:root",
+	})
 	cloudConfig.WriteFiles = append(cloudConfig.WriteFiles, input.ExtraWriteFiles...)
 	if args := input.ExtraKubeletArgs; len(args) > 0 {
 		cloudConfig.WriteFiles = append(cloudConfig.WriteFiles, File{

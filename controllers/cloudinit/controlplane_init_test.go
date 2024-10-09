@@ -28,7 +28,9 @@ func TestControlPlaneInit(t *testing.T) {
 	t.Run("Simple", func(t *testing.T) {
 		g := NewWithT(t)
 
+		authToken := "capi-auth-token"
 		cloudConfig, err := cloudinit.NewInitControlPlane(&cloudinit.ControlPlaneInitInput{
+			AuthToken:            authToken,
 			CAKey:                `CA KEY DATA`,
 			CACert:               `CA CERT DATA`,
 			ControlPlaneEndpoint: "k8s.my-domain.com",
@@ -72,6 +74,12 @@ func TestControlPlaneInit(t *testing.T) {
 			cloudinit.File{
 				Content:     "CA CERT DATA",
 				Path:        "/var/tmp/ca.crt",
+				Permissions: "0600",
+				Owner:       "root:root",
+			},
+			cloudinit.File{
+				Content:     authToken,
+				Path:        cloudinit.CAPIAuthTokenPath,
 				Permissions: "0600",
 				Owner:       "root:root",
 			},
