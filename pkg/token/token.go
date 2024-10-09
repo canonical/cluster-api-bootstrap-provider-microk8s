@@ -68,7 +68,7 @@ func getSecret(ctx context.Context, c client.Client, clusterKey client.ObjectKey
 func generateAndStore(ctx context.Context, c client.Client, clusterKey client.ObjectKey) (*corev1.Secret, error) {
 	token, err := randomB64(16)
 	if err != nil {
-		return nil, fmt.Errorf("failed to generate token: %v", err)
+		return nil, fmt.Errorf("failed to generate token: %w", err)
 	}
 
 	secret := &corev1.Secret{
@@ -82,7 +82,7 @@ func generateAndStore(ctx context.Context, c client.Client, clusterKey client.Ob
 	}
 
 	if err := c.Create(ctx, secret); err != nil {
-		return nil, fmt.Errorf("failed to create secret: %v", err)
+		return nil, fmt.Errorf("failed to create secret: %w", err)
 	}
 
 	return secret, nil
@@ -93,7 +93,7 @@ func randomB64(n int) (string, error) {
 	b := make([]byte, n)
 	_, err := cryptorand.Read(b)
 	if err != nil {
-		return "", fmt.Errorf("failed to read random bytes: %v", err)
+		return "", fmt.Errorf("failed to read random bytes: %w", err)
 	}
 	return base64.StdEncoding.EncodeToString(b), nil
 }
