@@ -59,6 +59,8 @@ import (
 	"sigs.k8s.io/controller-runtime/pkg/handler"
 	"sigs.k8s.io/controller-runtime/pkg/log"
 	"sigs.k8s.io/controller-runtime/pkg/source"
+
+	tokenpkg "github.com/canonical/cluster-api-bootstrap-provider-microk8s/pkg/token"
 )
 
 type InitLocker interface {
@@ -213,6 +215,10 @@ func (r *MicroK8sConfigReconciler) Reconcile(ctx context.Context, req ctrl.Reque
 		return ctrl.Result{}, nil
 	}
 
+	if err = tokenpkg.Reconcile(ctx, r.Client, util.ObjectKey(scope.Cluster)); err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to reconcile token: %w", err)
+	}
+
 	// Note: can't use IsFalse here because we need to handle the absence of the condition as well as false.
 	if !conditions.IsTrue(cluster, clusterv1.ControlPlaneInitializedCondition) {
 		log.Info("Cluster control plane is not initialized, waiting")
@@ -296,7 +302,13 @@ func (r *MicroK8sConfigReconciler) handleClusterNotInitialized(ctx context.Conte
 		portOfDqlite = remappedDqlitePort
 	}
 
+	authToken, err := tokenpkg.Lookup(ctx, r.Client, util.ObjectKey(scope.Cluster))
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to lookup auth token: %w", err)
+	}
+
 	controlPlaneInput := &cloudinit.ControlPlaneInitInput{
+		AuthToken:            authToken,
 		CACert:               *cert,
 		CAKey:                *key,
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
@@ -403,7 +415,13 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		return ctrl.Result{RequeueAfter: 30 * time.Second}, nil
 	}
 
+	authToken, err := tokenpkg.Lookup(ctx, r.Client, util.ObjectKey(scope.Cluster))
+	if err != nil {
+		return ctrl.Result{}, fmt.Errorf("failed to lookup auth token: %w", err)
+	}
+
 	controlPlaneInput := &cloudinit.ControlPlaneJoinInput{
+		AuthToken:            authToken,
 		ControlPlaneEndpoint: scope.Cluster.Spec.ControlPlaneEndpoint.Host,
 		Token:                token,
 		TokenTTL:             microk8sConfig.Spec.InitConfiguration.JoinTokenTTLInSecs,

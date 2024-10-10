@@ -27,6 +27,8 @@ import (
 
 // ControlPlaneInitInput defines the context needed to generate a controlplane instance to init a cluster.
 type ControlPlaneInitInput struct {
+	// AuthToken will be used for authenticating CAPI requests.
+	AuthToken string
 	// CAKey is the PEM-encoded key of the cluster CA certificate.
 	CAKey string
 	// CACert is the PEM-encoded cert of the cluster CA certificate.
@@ -131,6 +133,7 @@ func NewInitControlPlane(input *ControlPlaneInitInput) (*CloudConfig, error) {
 		cloudConfig.WriteFiles,
 		File{Content: input.CAKey, Path: filepath.Join("/var", "tmp", "ca.key"), Permissions: "0600", Owner: "root:root"},
 		File{Content: input.CACert, Path: filepath.Join("/var", "tmp", "ca.crt"), Permissions: "0600", Owner: "root:root"},
+		File{Content: input.AuthToken, Path: CAPIAuthTokenPath, Permissions: "0600", Owner: "root:root"},
 	)
 	cloudConfig.WriteFiles = append(cloudConfig.WriteFiles, input.ExtraWriteFiles...)
 

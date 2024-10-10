@@ -19,7 +19,12 @@ package cloudinit
 import (
 	"bytes"
 	"fmt"
+	"path/filepath"
 	"text/template"
+)
+
+var (
+	CAPIAuthTokenPath = filepath.Join("/capi", "etc", "token")
 )
 
 // File is a file that cloud-init will create.
