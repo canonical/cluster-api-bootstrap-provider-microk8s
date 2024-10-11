@@ -45,7 +45,7 @@ func Lookup(ctx context.Context, c client.Client, clusterKey client.ObjectKey) (
 	return string(v), nil
 }
 
-// name returns the name of the token secret, computed by convention using the name of the cluster.
+// authTokenName returns the name of the auth-token secret, computed by convention using the name of the cluster.
 func authTokenName(clusterName string) string {
 	return fmt.Sprintf("%s-%s", clusterName, AuthTokenNameSuffix)
 }

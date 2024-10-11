@@ -27,7 +27,7 @@ import (
 
 // ControlPlaneJoinInput defines the context needed to generate a controlplane instance to join a cluster.
 type ControlPlaneJoinInput struct {
-	// AuthToken will be used for authenticating CAPI requests.
+	// AuthToken will be used for authenticating CAPI-only requests to the cluster-agent.
 	AuthToken string
 	// ControlPlaneEndpoint is the control plane endpoint of the cluster.
 	ControlPlaneEndpoint string

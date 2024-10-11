@@ -27,7 +27,7 @@ import (
 
 // ControlPlaneInitInput defines the context needed to generate a controlplane instance to init a cluster.
 type ControlPlaneInitInput struct {
-	// AuthToken will be used for authenticating CAPI requests.
+	// AuthToken will be used for authenticating CAPI-only requests to the cluster-agent.
 	AuthToken string
 	// CAKey is the PEM-encoded key of the cluster CA certificate.
 	CAKey string
