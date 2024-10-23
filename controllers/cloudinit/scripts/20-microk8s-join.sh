@@ -16,15 +16,23 @@ shift
 
 # Loop over the given join addresses until microk8s join command succeeds.
 joined="false"
+attempts=0
+max_attempts=30
 while [ "$joined" = "false" ]; do
 
   for url in "${@}"; do
+    if [ $attempts -ge $max_attempts ]; then
+      echo "Max join retry limit reached, exiting."
+      exit 1
+    fi
+
     if microk8s join "${url}" $join_args; then
       joined="true"
       break
     fi
 
-    echo "Failed to join MicroK8s cluster, will retry"
+    echo "Failed to join MicroK8s cluster, retrying ($((attempts+1))/$max_attempts)"
+    attempts=$((attempts+1))
     sleep 5
   done
 
