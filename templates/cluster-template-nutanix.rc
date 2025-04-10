@@ -1,0 +1,40 @@
+# Kubernetes cluster configuration
+export KUBERNETES_VERSION=v1.31.6
+export CONTROL_PLANE_MACHINE_COUNT=1
+export WORKER_MACHINE_COUNT=1
+
+# Nutanix endpoint configuration.
+export NUTANIX_ENDPOINT=
+export NUTANIX_INSECURE=false
+export NUTANIX_PRISM_ELEMENT_CLUSTER_NAME=
+export NUTANIX_USER=admin
+export NUTANIX_PASSWORD=Nutanix/4u
+
+# Nutanix machine configuration
+export NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME=ubuntu-22.04
+export NUTANIX_MACHINE_MEMORY_SIZE=4Gi
+export NUTANIX_MACHINE_VCPU_SOCKET=2
+export NUTANIX_MACHINE_VCPU_PER_SOCKET=1
+export NUTANIX_SYSTEMDISK_SIZE=40Gi
+export NUTANIX_SUBNET_NAME=""
+
+# User configuration
+export NUTANIX_USER="capi"
+export NUTANIX_SSH_AUTHORIZED_KEY=""
+
+# kube-vip configuration
+export KUBEVIP_LB_ENABLE=false
+export KUBEVIP_SVC_ENABLE=false
+export KUBEVIP_SVC_ELECTION=false
+
+# (optional) Containerd HTTP proxy configuration. Leave empty if not required.
+export CONTAINERD_HTTP_PROXY=""
+export CONTAINERD_HTTPS_PROXY=""
+export CONTAINERD_NO_PROXY=""
+
+# (optional) Snap risk level and confinement
+export SNAP_RISKLEVEL="stable"
+export SNAP_CONFINEMENT="classic"
+
+# Upgrade configuration
+export UPGRADE_STRATEGY=SmartUpgrade
