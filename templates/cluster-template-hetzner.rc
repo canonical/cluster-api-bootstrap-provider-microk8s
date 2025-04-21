@@ -1,0 +1,18 @@
+# Kubernetes cluster configuration
+export KUBERNETES_VERSION=1.28.8
+export CONTROL_PLANE_MACHINE_COUNT=1
+export WORKER_MACHINE_COUNT=1
+
+# Hetzner Cloud configuration
+HCLOUD_SECRET_NAME=hetzner
+HCLOUD_CONTROL_PLANE_MACHINE_TYPE=cax11
+HCLOUD_REGION=fsn1
+HCLOUD_SSH_KEY=my-ssh-key
+HCLOUD_WORKER_MACHINE_TYPE=cax11
+
+# Snap risk level and confinement
+SNAP_CONFINEMENT=classic
+SNAP_RISKLEVEL=stable
+
+# Upgrade configuration
+export UPGRADE_STRATEGY=SmartUpgrade
