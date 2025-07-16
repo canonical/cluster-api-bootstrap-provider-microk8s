@@ -430,6 +430,7 @@ func (r *MicroK8sConfigReconciler) handleJoiningControlPlaneNode(ctx context.Con
 		ClusterAgentPort:     portOfNodeToConnectTo,
 		DqlitePort:           portOfDqlite,
 		IPinIP:               microk8sConfig.Spec.InitConfiguration.IPinIP,
+		Addons:               microk8sConfig.Spec.InitConfiguration.Addons,
 		ContainerdHTTPProxy:  microk8sConfig.Spec.InitConfiguration.HTTPProxy,
 		ContainerdHTTPSProxy: microk8sConfig.Spec.InitConfiguration.HTTPSProxy,
 		ContainerdNoProxy:    microk8sConfig.Spec.InitConfiguration.NoProxy,
