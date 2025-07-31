@@ -49,6 +49,8 @@ type ControlPlaneJoinInput struct {
 	ContainerdNoProxy string
 	// IPinIP defines whether Calico will use IPinIP mode for cluster networking.
 	IPinIP bool
+	// Addons is the list of addons to enable.
+	Addons []string
 	// JoinNodeIPs is the IP addresses of the nodes to join.
 	JoinNodeIPs []string
 	// Confinement specifies a classic or strict deployment of microk8s snap.
@@ -92,6 +94,12 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 	endpointType := "DNS"
 	if net.ParseIP(input.ControlPlaneEndpoint) != nil {
 		endpointType = "IP"
+	}
+
+	// quote addons to add to the command-line later
+	addons := make([]string, 0, len(input.Addons))
+	for _, addon := range input.Addons {
+		addons = append(addons, fmt.Sprintf("%q", addon))
 	}
 
 	// figure out snap channel from KubernetesVersion
@@ -152,6 +160,13 @@ func NewJoinControlPlane(input *ControlPlaneJoinInput) (*CloudConfig, error) {
 		scriptPath(configureAPIServerScript),
 		fmt.Sprintf("microk8s add-node --token-ttl %v --token %q", input.TokenTTL, input.Token),
 	)
+
+	if len(addons) > 0 {
+		cloudConfig.RunCommands = append(cloudConfig.RunCommands,
+			fmt.Sprintf("%s %s", scriptPath(microk8sEnableScript), strings.Join(addons, " ")),
+		)
+	}
+
 	cloudConfig.RunCommands = append(cloudConfig.RunCommands, input.PostRunCommands...)
 
 	return cloudConfig, nil
