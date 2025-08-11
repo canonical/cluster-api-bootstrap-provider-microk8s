@@ -24,7 +24,6 @@ spec:
   cloudName: ${OPENSTACK_CLOUD}
   identityRef:
     name: ${OPENSTACK_CLOUD_CONFIG_SECRET_NAME}
-    kind: Secret
   nodeCidr: ${OPENSTACK_NETWORK_CIDR}
   disablePortSecurity: true
   dnsNameservers: [${OPENSTACK_DNS_NAMESERVERS:= }]
@@ -70,7 +69,6 @@ spec:
       cloudName: ${OPENSTACK_CLOUD}
       identityRef:
         name: ${OPENSTACK_CLOUD_CONFIG_SECRET_NAME}
-        kind: Secret
 ---
 apiVersion: cluster.x-k8s.io/v1beta1
 kind: MachineDeployment
@@ -106,7 +104,6 @@ spec:
       cloudName: ${OPENSTACK_CLOUD}
       identityRef:
         name: ${OPENSTACK_CLOUD_CONFIG_SECRET_NAME}
-        kind: Secret
       flavor: ${OPENSTACK_NODE_MACHINE_FLAVOR}
       image: ${OPENSTACK_IMAGE_NAME}
       sshKeyName: ${OPENSTACK_SSH_KEY_NAME}
