@@ -8,6 +8,7 @@ export OPENSTACK_CLOUD=openstack
 export OPENSTACK_CLOUD_CONFIG_SECRET_NAME=cloud-config
 
 # OpenStack region and network configuration. External network ID is only needed if multiple external networks exist.
+export OPENSTACK_DISABLE_EXTERNAL_NETWORK=false
 export OPENSTACK_EXTERNAL_NETWORK_ID=""
 export OPENSTACK_FAILURE_DOMAIN="nova"
 
