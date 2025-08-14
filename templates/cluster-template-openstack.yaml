@@ -28,7 +28,7 @@ spec:
   managedSubnets:
   - cidr: ${OPENSTACK_NETWORK_CIDR}
     dnsNameservers: [${OPENSTACK_DNS_NAMESERVERS:= }]
-  disableExternalNetwork: ${OPENSTACK_DISABLE_EXTERNAL_NETWORK:=false}
+  disableExternalNetwork: false
   externalNetwork:
     id: ${OPENSTACK_EXTERNAL_NETWORK_ID:=""}
 ---
