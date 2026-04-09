@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@ee0669bd1cc54295c223e0bb666b733df41de1c5 # v2
       - name: Retrieve build information
         id: build
         run: |
@@ -21,7 +21,7 @@ jobs:
           echo "VERSION=${VERSION}" >> $GITHUB_ENV
           sed -i "s,docker.io/cdkbot/capi-bootstrap-provider-microk8s:latest,docker.io/cdkbot/capi-bootstrap-provider-microk8s:${VERSION//v}," bootstrap-components.yaml
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v0.1.14
+        uses: softprops/action-gh-release@6232f0b438cb856c39d14f8743e3a7c99fc879af # v0.1.14
         with:
           name: 'Release ${{ env.VERSION }}'
           files: |
