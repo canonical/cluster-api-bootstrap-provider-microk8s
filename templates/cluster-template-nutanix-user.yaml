@@ -1,0 +1,282 @@
+# Based on: https://github.com/nutanix-cloud-native/cluster-api-provider-nutanix/releases/download/v1.5.3/cluster-template.yaml
+---
+apiVersion: v1
+binaryData:
+  ca.crt: ${NUTANIX_ADDITIONAL_TRUST_BUNDLE=""}
+kind: ConfigMap
+metadata:
+  name: ${CLUSTER_NAME}-pc-trusted-ca-bundle
+  namespace: ${NAMESPACE}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: ${CLUSTER_NAME}
+  namespace: ${NAMESPACE}
+stringData:
+  credentials: |
+    [
+      {
+        "type": "basic_auth",
+        "data": {
+          "prismCentral":{
+            "username": "${NUTANIX_USER}",
+            "password": "${NUTANIX_PASSWORD}"
+          }
+        }
+      }
+    ]
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: Cluster
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+  name: ${CLUSTER_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  clusterNetwork:
+    pods:
+      cidrBlocks:
+        - 172.20.0.0/16
+    serviceDomain: cluster.local
+    services:
+      cidrBlocks:
+        - 172.19.0.0/16
+  controlPlaneRef:
+    apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+    kind: MicroK8sControlPlane
+    name: ${CLUSTER_NAME}-kcp
+  infrastructureRef:
+    apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+    kind: NutanixCluster
+    name: ${CLUSTER_NAME}
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineDeployment
+metadata:
+  labels:
+    cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+  name: ${CLUSTER_NAME}-md-0
+  namespace: ${NAMESPACE}
+spec:
+  clusterName: ${CLUSTER_NAME}
+  replicas: ${WORKER_MACHINE_COUNT:=1}
+  selector:
+    matchLabels: {}
+  template:
+    metadata:
+      labels:
+        cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+    spec:
+      bootstrap:
+        configRef:
+          apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+          kind: MicroK8sConfigTemplate
+          name: ${CLUSTER_NAME}-kcfg-0
+      clusterName: ${CLUSTER_NAME}
+      infrastructureRef:
+        apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+        kind: NutanixMachineTemplate
+        name: ${CLUSTER_NAME}-mt-0
+      version: ${KUBERNETES_VERSION}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixCluster
+metadata:
+  name: ${CLUSTER_NAME}
+  namespace: ${NAMESPACE}
+spec:
+  controlPlaneEndpoint:
+    host: ${CONTROL_PLANE_ENDPOINT_IP}
+    port: ${CONTROL_PLANE_ENDPOINT_PORT=6443}
+  prismCentral:
+    additionalTrustBundle:
+      kind: ConfigMap
+      name: ${CLUSTER_NAME}-pc-trusted-ca-bundle
+    address: ${NUTANIX_ENDPOINT}
+    credentialRef:
+      kind: Secret
+      name: ${CLUSTER_NAME}
+    insecure: ${NUTANIX_INSECURE=false}
+    port: ${NUTANIX_PORT=9440}
+---
+apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+kind: NutanixMachineTemplate
+metadata:
+  name: ${CLUSTER_NAME}-mt-0
+  namespace: ${NAMESPACE}
+spec:
+  template:
+    spec:
+      bootType: ${NUTANIX_MACHINE_BOOT_TYPE=legacy}
+      cluster:
+        name: ${NUTANIX_PRISM_ELEMENT_CLUSTER_NAME}
+        type: name
+      image:
+        name: ${NUTANIX_MACHINE_TEMPLATE_IMAGE_NAME}
+        type: name
+      memorySize: ${NUTANIX_MACHINE_MEMORY_SIZE=4Gi}
+      providerID: nutanix://${CLUSTER_NAME}-m1
+      subnet:
+      - name: ${NUTANIX_SUBNET_NAME}
+        type: name
+      systemDiskSize: ${NUTANIX_SYSTEMDISK_SIZE=40Gi}
+      vcpuSockets: ${NUTANIX_MACHINE_VCPU_SOCKET=2}
+      vcpusPerSocket: ${NUTANIX_MACHINE_VCPU_PER_SOCKET=1}
+---
+apiVersion: controlplane.cluster.x-k8s.io/v1beta1
+kind: MicroK8sControlPlane
+metadata:
+  name: ${CLUSTER_NAME}-kcp
+spec:
+  controlPlaneConfig:
+    initConfiguration:
+      joinTokenTTLInSecs: 900000
+      addons:
+        - dns
+        - ingress
+      httpProxy: "${CONTAINERD_HTTP_PROXY:=}"
+      httpsProxy: "${CONTAINERD_HTTPS_PROXY:=}"
+      noProxy: "${CONTAINERD_NO_PROXY:=}"
+      riskLevel: "${SNAP_RISKLEVEL:=stable}"
+      confinement: "${SNAP_CONFINEMENT:=classic}"
+      preRunCommands:
+        - hostnamectl set-hostname "{{ ds.meta_data.hostname }}"
+        - "useradd -m ${NUTANIX_USER:=capi} -s /bin/bash"
+        - "mkdir -p /home/${NUTANIX_USER:=capi}/.ssh"
+        - "echo '${NUTANIX_SSH_AUTHORIZED_KEY}' > /home/${NUTANIX_USER:=capi}/.ssh/authorized_keys"
+        - "chown -R ${NUTANIX_USER:=capi}:${NUTANIX_USER:=capi} /home/${NUTANIX_USER:=capi}/.ssh"
+        - "chmod 700 /home/${NUTANIX_USER:=capi}/.ssh"
+        - "chmod 600 /home/${NUTANIX_USER:=capi}/.ssh/authorized_keys"
+        - "echo '${NUTANIX_USER:=capi} ALL=(ALL) NOPASSWD:ALL' > /etc/sudoers.d/${NUTANIX_USER:=capi}"
+      postRunCommands:
+        - mkdir -p /var/snap/microk8s/current/var/staticpod
+        - cp /tmp/kube-vip.yaml /var/snap/microk8s/current/var/staticpod/
+      extraKubeletArgs:
+        - "--pod-manifest-path=/var/snap/microk8s/current/var/staticpod"
+      extraWriteFiles:
+        - content: |
+            apiVersion: v1
+            kind: Pod
+            metadata:
+              name: kube-vip
+              namespace: kube-system
+            spec:
+              containers:
+                - name: kube-vip
+                  image: ghcr.io/kube-vip/kube-vip:v0.8.9
+                  imagePullPolicy: IfNotPresent
+                  args:
+                    - manager
+                  env:
+                    - name: vip_arp
+                      value: "true"
+                    - name: address
+                      value: "${CONTROL_PLANE_ENDPOINT_IP}"
+                    - name: port
+                      value: "${CONTROL_PLANE_ENDPOINT_PORT=6443}"
+                    - name: vip_cidr
+                      value: "32"
+                    - name: vip_nodename
+                      valueFrom:
+                        fieldRef:
+                          fieldPath: spec.nodeName
+                    - name: cp_enable
+                      value: "true"
+                    - name: cp_namespace
+                      value: kube-system
+                    - name: vip_ddns
+                      value: "false"
+                    - name: vip_leaderelection
+                      value: "true"
+                    - name: vip_leaseduration
+                      value: "15"
+                    - name: vip_renewdeadline
+                      value: "10"
+                    - name: vip_retryperiod
+                      value: "2"
+                    - name: svc_enable
+                      value: "${KUBEVIP_SVC_ENABLE=false}"
+                    - name: lb_enable
+                      value: "${KUBEVIP_LB_ENABLE=false}"
+                    - name: enableServicesElection
+                      value: "${KUBEVIP_SVC_ELECTION=false}"
+                  securityContext:
+                    capabilities:
+                      add:
+                        - NET_ADMIN
+                        - SYS_TIME
+                        - NET_RAW
+                  volumeMounts:
+                    - mountPath: /etc/kubernetes/admin.conf
+                      name: kubeconfig
+                  resources: {}
+              hostAliases:
+              - hostnames:
+                - kubernetes
+                ip: 127.0.0.1
+              hostNetwork: true
+              volumes:
+                - name: kubeconfig
+                  hostPath:
+                    type: File
+                    path: /var/snap/microk8s/current/credentials/client.config
+            status: {}
+          owner: root:root
+          path: /tmp/kube-vip.yaml
+          permissions: "0600"
+  machineTemplate:
+    infrastructureTemplate:
+      apiVersion: infrastructure.cluster.x-k8s.io/v1beta1
+      kind: NutanixMachineTemplate
+      name: "${CLUSTER_NAME}-mt-0"
+  replicas: ${CONTROL_PLANE_MACHINE_COUNT:=1}
+  version: "${KUBERNETES_VERSION}"
+  upgradeStrategy: "${UPGRADE_STRATEGY:=SmartUpgrade}"
+---
+apiVersion: bootstrap.cluster.x-k8s.io/v1beta1
+kind: MicroK8sConfigTemplate
+metadata:
+  name: "${CLUSTER_NAME}-kcfg-0"
+spec:
+  template:
+    spec:
+      initConfiguration:
+        httpProxy: "${CONTAINERD_HTTP_PROXY:=}"
+        httpsProxy: "${CONTAINERD_HTTPS_PROXY:=}"
+        noProxy: "${CONTAINERD_NO_PROXY:=}"
+        riskLevel: "${SNAP_RISKLEVEL:=stable}"
+        confinement: "${SNAP_CONFINEMENT:=classic}"
+---
+apiVersion: cluster.x-k8s.io/v1beta1
+kind: MachineHealthCheck
+metadata:
+  name: ${CLUSTER_NAME}-mhc
+  namespace: ${NAMESPACE}
+spec:
+  clusterName: ${CLUSTER_NAME}
+  maxUnhealthy: 40%
+  nodeStartupTimeout: 10m0s
+  selector:
+    matchLabels:
+      cluster.x-k8s.io/cluster-name: ${CLUSTER_NAME}
+  unhealthyConditions:
+  - status: "False"
+    timeout: 5m0s
+    type: Ready
+  - status: Unknown
+    timeout: 5m0s
+    type: Ready
+  - status: "True"
+    timeout: 5m0s
+    type: MemoryPressure
+  - status: "True"
+    timeout: 5m0s
+    type: DiskPressure
+  - status: "True"
+    timeout: 5m0s
+    type: PIDPressure
+  - status: "True"
+    timeout: 5m0s
+    type: NetworkUnavailable

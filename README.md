@@ -256,6 +256,40 @@ Then, deploy the cluster with:
 microk8s kubectl apply -f cluster-gcp.yaml
 ```
 
+#### Nutanix
+
+> *NOTE*: Ensure that you have properly deployed the Nutanix infrastructure provider prior to executing the commands below. See [Initialization for common providers](https://cluster-api.sigs.k8s.io/user/quick-start.html#initialization-for-common-providers)
+
+Prior to generate a cluster template, you need to add a VM image for use in the cluster. The MicroK8s provider works with any stock Ubuntu image. Use a Ubuntu 22.04 LTS cloud image.
+
+From Prism Central, create a new image with:
+```bash
+nuclei image.create name=ubuntu-22.04 image_type=DISK_IMAGE source_uri=https://cloud-images.ubuntu.com/jammy/current/jammy-server-cloudimg-amd64.img
+```
+
+Make note of the name of the image `ubuntu-22.04`, which we then feed into the cluster template.
+
+Generate a cluster template with:
+
+```bash
+# review list of variables needed for the cluster template
+clusterctl generate cluster microk8s-nutanix --from ./templates/cluster-template-nutanix.yaml --list-variables
+
+# set environment variables (edit the file as needed before sourcing it)
+source ./templates/cluster-template-nutanix.rc
+
+# generate the cluster
+clusterctl generate cluster microk8s-nutanix --from ./templates/cluster-template-nutanix.yaml > cluster-nutanix.yaml
+```
+
+Then, deploy the cluster with:
+
+```bash
+microk8s kubectl apply -f cluster-nutanix.yaml
+```
+
+You can also use the `cluster-template-nutanix-user.yaml` template file to inject a user and an ssh key in the cluster nodes. It will allow you to connect directly on the nodes.
+
 ## Development
 
 The two MicroK8s CAPI providers, the bootstrap and control plane, serve distinct purposes:
